@@ -1,0 +1,7 @@
+<div class="lista">
+  <app-item-tarea 
+    *ngFor="let tarea of tareas"
+    [tarea]="tarea"
+    (tareaEliminada)="onEliminar(tarea.id)">
+  </app-item-tarea>
+</div>

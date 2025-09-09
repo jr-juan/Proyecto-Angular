@@ -1,1 +1,107 @@
-/* You can add global styles to this file, and also import other style files */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f4f6f9;
+  margin: 0;
+  padding: 0;
+}
+
+/* Contenedor principal */
+.contenedor {
+  max-width: 600px;
+  margin: 40px auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+  padding: 20px 30px;
+}
+
+/* Título */
+.contenedor h1 {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* ===== Agregar tarea ===== */
+.agregar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.agregar input {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.agregar input:focus {
+  outline: none;
+  border-color: #4caf50;
+}
+
+.agregar button {
+  background: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.agregar button:hover {
+  background: #45a049;
+}
+
+/* ===== Lista de tareas ===== */
+.lista {
+  margin-top: 10px;
+}
+
+/* Item de tarea */
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  transition: 0.2s;
+}
+
+.item:hover {
+  background: #f1f1f1;
+}
+
+.item span {
+  font-size: 16px;
+  color: #444;
+}
+
+/* Botón eliminar */
+.item button {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #e74c3c;
+  transition: 0.3s;
+}
+
+.item button:hover {
+  transform: scale(1.2);
+  color: #c0392b;
+}
+
+/* Contador de tareas */
+.contenedor p {
+  font-size: 14px;
+  color: #555;
+  margin: 10px 0;
+}
