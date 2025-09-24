@@ -6,11 +6,20 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class ApiService {
-  private apiUrl = 'https://rickandmortyapi.com/api/character';
+  private apiUrl = 'http://apirecoleccion.gonzaloandreslucio.com/api';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
-  getDatos(): Observable<any> {
-    return this.http.get<any>(this.apiUrl);
+  getPerfiles(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/perfiles`);
   }
+
+  getRutasPorPerfil(perfilId: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/rutas?perfil_id=${perfilId}`);
+  }
+
+  getVehiculos(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/vehiculos`);
+  }
+
 }
