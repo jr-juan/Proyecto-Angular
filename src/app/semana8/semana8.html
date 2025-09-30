@@ -1,0 +1,34 @@
+<div class="container">
+    <mat-toolbar color="primary">
+        <span>Semana 8 - UI/UX y Estilos</span>
+        <span class="spacer"></span>
+        <button mat-icon-button (click)="toggleTheme()" aria-label="Alternar tema">
+            <mat-icon>{{isDarkMode ? 'light_mode' : 'dark_mode'}}</mat-icon>
+        </button>
+    </mat-toolbar>
+
+    <div class="content">
+        <mat-card>
+            <mat-card-header>
+                <mat-card-title>Librerías de Estilos</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <p>Este componente utiliza Angular Material para los estilos.</p>
+                <ul>
+                    <li>Responsive</li>
+                    <li>Dark Mode</li>
+                    <li>Accesibilidad</li>
+                </ul>
+            </mat-card-content>
+        </mat-card>
+
+        <mat-card>
+            <mat-card-header>
+                <mat-card-title>Contenido Adicional</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <p>Ejemplo de tarjeta con Material Design.</p>
+            </mat-card-content>
+        </mat-card>
+    </div>
+</div>
