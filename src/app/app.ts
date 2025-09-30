@@ -1,12 +1,13 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component } from '@angular/core';
+import { Semana8Component } from './semana8/semana8';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
-  templateUrl: './app.html',
-  styleUrl: './app.css'
+  standalone: true,
+  imports: [Semana8Component],
+  template: `<app-semana8></app-semana8>`,
+  styleUrls: ['./app.css']
 })
-export class App {
-  protected readonly title = signal('PrimerProyecto');
+export class AppComponent {
+  title = 'Dark-Mode';
 }
