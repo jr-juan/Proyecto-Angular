@@ -1,0 +1,14 @@
+<div class="login-page">
+  <div class="login-box">
+    <h2>Inicia sesión</h2>
+    <form (ngSubmit)="iniciarSesion()">
+      <input type="text" placeholder="Usuario" name="username" required />
+      <input type="password" placeholder="Contraseña" name="password" required />
+      <button type="submit" class="btn-login">Ingresar</button>
+    </form>
+    <p class="signup-text">
+      ¿No tienes cuenta?
+      <a routerLink="/registro">Regístrate aquí</a>
+    </p>
+  </div>
+</div>
