@@ -1,22 +1,81 @@
-<style>
-  header {
-    background: #4a90e2;
-    color: white;
-    text-align: center;
-    padding: 20px;
-    margin: 0;
-  }
+<!-- Header principal SOLO visible cuando NO este en login/registro -->
+@if (mostrarHeader()) {
+<header class="header-principal">
+  <div class="header-contenido">
+    <div>
+      <h1>Sistema de Recolección JHJ S.A.S</h1>
+    </div>
 
-  header h1 {
-    margin: 0;
-    font-size: 2rem;
-  }
-</style>
-
-<header>
-  <h1>Bienvenido a la pagina :D</h1>
+    <!-- Navegación -->
+    <nav class="navegacion">
+      <a routerLink="/tablero" routerLinkActive="activo" class="nav-link"> Tablero </a>
+      <a routerLink="/vehiculos" routerLinkActive="activo" class="nav-link"> Vehículos </a>
+      <a routerLink="/rutas" routerLinkActive="activo" class="nav-link"> Rutas </a>
+    </nav>
+  </div>
 </header>
+}
 
-<main>
+<!-- Contenido principal -->
+<main class="contenido-principal" [class.sin-header]="!mostrarHeader()">
   <router-outlet></router-outlet>
 </main>
+
+<style>
+  .header-principal {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .header-contenido {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .header-principal h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+  }
+
+  .navegacion {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .nav-link {
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .nav-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+  }
+
+  .nav-link.activo {
+    background: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .contenido-principal {
+    min-height: calc(100vh - 100px);
+  }
+
+  .contenido-principal.sin-header {
+    min-height: 100vh;
+  }
+</style>
