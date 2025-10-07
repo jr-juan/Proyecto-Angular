@@ -17,7 +17,7 @@ import { Ruta, Vehiculo } from "../modelos/interfaces";
       <!-- Tarjetas de estadísticas -->
       <div class="estadisticas">
         <div class="tarjeta-stat">
-          <div class="icono-stat">🚗</div>
+          <div class="icono-stat">Vehiculos</div>
           <div class="info-stat">
             <h3>{{ vehiculos.length }}</h3>
             <p>Vehículos Totales</p>
@@ -26,7 +26,7 @@ import { Ruta, Vehiculo } from "../modelos/interfaces";
         </div>
 
         <div class="tarjeta-stat">
-          <div class="icono-stat">🛣️</div>
+          <div class="icono-stat">Rutas</div>
           <div class="info-stat">
             <h3>{{ rutas.length }}</h3>
             <p>Rutas Registradas</p>
@@ -35,7 +35,7 @@ import { Ruta, Vehiculo } from "../modelos/interfaces";
         </div>
 
         <div class="tarjeta-stat">
-          <div class="icono-stat">✅</div>
+          <div class="icono-stat">Estado</div>
           <div class="info-stat">
             <h3>{{ vehiculosActivos }}</h3>
             <p>Vehículos Activos</p>
