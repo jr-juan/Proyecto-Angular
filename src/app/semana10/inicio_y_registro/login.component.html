@@ -1,0 +1,17 @@
+<div class="login-page">
+  <div class="login-box">
+    <h2>Inicia sesión</h2>
+    <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+      <!-- Usamos ngModel para el data binding. El email será el "usuario" -->
+      <input type_email="email" placeholder="Correo electrónico" name="email" [(ngModel)]="email" required />
+      <input type="password" placeholder="Contraseña" name="password" [(ngModel)]="password" required />
+      <!-- Cambiamos el tipo a "submit" -->
+      <button type="submit" class="btn-login" [disabled]="loginForm.invalid">Ingresar</button>
+    </form>
+
+    <p class="signup-text">
+      ¿No tienes cuenta?
+      <a routerLink="/registro">Regístrate aquí</a>
+    </p>
+  </div>
+</div>

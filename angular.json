@@ -28,7 +28,10 @@
             "outputMode": "server",
             "ssr": {
               "entry": "src/server.ts"
-            }
+            },
+            "polyfills": [
+              "zone.js"
+            ]
           },
           "configurations": {
             "production": {
@@ -81,10 +84,16 @@
             ],
             "styles": [
               "src/styles.css"
+            ],
+            "polyfills": [ 
+              "zone.js"
             ]
           }
         }
       }
     }
+  },
+  "cli": {
+    "analytics": false
   }
 }

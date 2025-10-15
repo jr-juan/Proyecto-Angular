@@ -1,0 +1,17 @@
+<div class="login-page">
+  <div class="login-box">
+    <h2>Registro de usuario</h2>
+
+    <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
+      <input type="email" placeholder="Correo electrónico" name="email" [(ngModel)]="email" required />
+      <input type="password" placeholder="Contraseña" name="password" [(ngModel)]="password" required />
+
+      <button type="submit" class="btn-login" [disabled]="registerForm.invalid">Registrarse</button>
+    </form>
+
+    <p class="signup-text">
+      ¿Ya tienes cuenta?
+      <a routerLink="/login">Inicia sesión aquí</a>
+    </p>
+  </div>
+</div>
