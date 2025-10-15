@@ -1,13 +1,13 @@
-import { Component, OnInit } from "@angular/core";
-import { CommonModule } from "@angular/common";
-import { RouterModule } from "@angular/router";
-import { ApiService } from "../servicios/api.service";
-import { Ruta, Vehiculo } from "../modelos/interfaces";
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { TableroLogica } from '../logica_componentes/tablero';
 
 @Component({
-  selector: "app-tablero",
+  selector: 'app-tablero',
   standalone: true,
   imports: [CommonModule, RouterModule],
+  providers: [TableroLogica],
   styleUrls: [`../estilos_componentes/tablero.css`],
   template: `
     <div class="tablero-contenedor">
@@ -19,7 +19,7 @@ import { Ruta, Vehiculo } from "../modelos/interfaces";
         <div class="tarjeta-stat">
           <div class="icono-stat">Vehiculos</div>
           <div class="info-stat">
-            <h3>{{ vehiculos.length }}</h3>
+            <h3>{{ logica.vehiculos.length }}</h3>
             <p>Vehículos Totales</p>
           </div>
           <a routerLink="/vehiculos" class="btn-ver">Ver todos </a>
@@ -28,7 +28,7 @@ import { Ruta, Vehiculo } from "../modelos/interfaces";
         <div class="tarjeta-stat">
           <div class="icono-stat">Rutas</div>
           <div class="info-stat">
-            <h3>{{ rutas.length }}</h3>
+            <h3>{{ logica.rutas.length }}</h3>
             <p>Rutas Registradas</p>
           </div>
           <a routerLink="/rutas" class="btn-ver">Ver todas </a>
@@ -37,7 +37,7 @@ import { Ruta, Vehiculo } from "../modelos/interfaces";
         <div class="tarjeta-stat">
           <div class="icono-stat">Estado</div>
           <div class="info-stat">
-            <h3>{{ vehiculosActivos }}</h3>
+            <h3>{{ logica.vehiculosActivos }}</h3>
             <p>Vehículos Activos</p>
           </div>
         </div>
@@ -59,54 +59,31 @@ import { Ruta, Vehiculo } from "../modelos/interfaces";
       </div>
 
       <!-- Últimos vehículos -->
-      @if (vehiculos.length > 0) {
-        <div class="seccion-recientes">
-          <h3>Últimos Vehículos Registrados</h3>
-          <div class="lista-mini">
-            @for (v of vehiculos.slice(0, 5); track v.id) {
-              <div class="item-mini">
-                <div class="item-info">
-                  <strong>{{ v.placa }}</strong>
-                  <span class="detalle">{{ v.marca }} {{ v.modelo }}</span>
-                </div>
-                <span class="badge" [class.activo]="v.activo" [class.inactivo]="!v.activo">
-                  {{ v.activo ? 'Activo' : 'Inactivo' }}
-                </span>
-              </div>
-            }
+      @if (logica.vehiculos.length > 0) {
+      <div class="seccion-recientes">
+        <h3>Últimos Vehículos Registrados</h3>
+        <div class="lista-mini">
+          @for (v of logica.obtenerUltimosVehiculos(); track v.id) {
+          <div class="item-mini">
+            <div class="item-info">
+              <strong>{{ v.placa }}</strong>
+              <span class="detalle">{{ v.marca }} {{ v.modelo }}</span>
+            </div>
+            <span class="badge" [class.activo]="v.activo" [class.inactivo]="!v.activo">
+              {{ v.activo ? 'Activo' : 'Inactivo' }}
+            </span>
           </div>
+          }
         </div>
+      </div>
       }
     </div>
-  `
+  `,
 })
 export class TableroComponent implements OnInit {
-  rutas: Ruta[] = [];
-  vehiculos: Vehiculo[] = [];
-  vehiculosActivos = 0;
-
-  constructor(private apiService: ApiService) {}
+  constructor(public logica: TableroLogica) {}
 
   ngOnInit() {
-    this.cargarDatos();
-  }
-
-  cargarDatos() {
-    // Cargar rutas
-    this.apiService.obtenerRutasPorPerfil(this.apiService.PERFIL_ID).subscribe({
-      next: (res: any) => {
-        this.rutas = res.data || res || [];
-      },
-      error: (err) => console.error('Error al cargar rutas:', err)
-    });
-
-    // Cargar vehículos
-    this.apiService.obtenerVehiculos().subscribe({
-      next: (res: any) => {
-        this.vehiculos = res.data || res || [];
-        this.vehiculosActivos = this.vehiculos.filter(v => v.activo).length;
-      },
-      error: (err) => console.error('Error al cargar vehículos:', err)
-    });
+    this.logica.inicializar();
   }
 }

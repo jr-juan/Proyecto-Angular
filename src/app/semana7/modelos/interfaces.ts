@@ -30,16 +30,17 @@ export interface Vehiculo {
 }
 
 export interface CrearVehiculo {
+  perfil_id: string;
   placa: string;
   marca: string;
   modelo: string;
   capacidad: number;
   tipo_combustible: string;
   activo: boolean;
-  perfil_id: string;
 }
 
 export interface ActualizarVehiculo {
+  perfil_id?: string;
   placa?: string;
   marca?: string;
   modelo?: string;

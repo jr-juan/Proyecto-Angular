@@ -34,7 +34,7 @@ export class ApiService {
   }
 
   crearRuta(ruta: CrearRuta): Observable<any> {
-    // Quito perfil_id del objeto de ruta y creo otro objeto sin ese campo
+    // Para rutas: perfil_id va en la URL, no en el body
     const { perfil_id, ...rutaSinPerfil } = ruta;
     return this.http.post<any>(
       `${this.urlBase}/rutas?perfil_id=${this.PERFIL_ID}`,
@@ -54,11 +54,11 @@ export class ApiService {
   }
 
   crearVehiculo(vehiculo: CrearVehiculo): Observable<any> {
-    // Quito perfil_id del objeto de vehículo y creo otro objeto sin ese campo
-    const { perfil_id, ...vehiculoSinPerfil } = vehiculo;
+    // Para vehículos: perfil_id va en el body, NO se quita
+    console.log('Datos completos enviados:', vehiculo);
     return this.http.post<any>(
-      `${this.urlBase}/vehiculos?perfil_id=${this.PERFIL_ID}`,
-      vehiculoSinPerfil
+      `${this.urlBase}/vehiculos`,
+      vehiculo  // Se envía TODO incluyendo perfil_id
     );
   }
 
