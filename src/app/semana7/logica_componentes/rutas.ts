@@ -1,201 +1,255 @@
-import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { Injectable, NgZone, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ApiService } from '../servicios/api.service';
-import { Ruta, Calle, CrearRuta } from '../modelos/interfaces';
+import { Ruta } from '../modelos/interfaces';
 
 @Injectable()
-export class RutasLogica {
-  rutas: Ruta[] = [];
-  calles: Calle[] = [];
-  callesSeleccionadas: Calle[] = [];
-  
-  mostrarFormulario = false;
-  cargando = false;
-  mensajeError = '';
-  
-  formulario = {
-    nombre_ruta: ''
-  };
+export class RutasMapaLogica {
+  private map: any;
+  private L: any; // Leaflet se cargará dinámicamente
+  private routeLayers: any[] = [];
+  private resizeObserver?: ResizeObserver;
+  private onWindowResize?: () => void;
 
-  mapa: any;
-  capasCalles: Map<string, any> = new Map();
-  L: any; // Leaflet se cargará dinámicamente
+  rutas: Ruta[] = [];
+  loading = true;
+
+  private containerElement: any;
+  private mapElement: any;
 
   constructor(
     private apiService: ApiService,
+    private ngZone: NgZone,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
+  setElements(containerRef: any, mapRef: any) {
+    this.containerElement = containerRef;
+    this.mapElement = mapRef;
+  }
+
   inicializar() {
     this.cargarRutas();
-    this.cargarCalles();
+    //this.cargarRutasDemo();
+    // this.inicializarMapaDespuesDeVista();
   }
 
-  async configurarLeaflet() {
-    if (isPlatformBrowser(this.platformId)) {
-      setTimeout(async () => {
-        await this.cargarLeaflet();
-        if (this.L) {
-          delete (this.L.Icon.Default.prototype as any)._getIconUrl;
-          this.L.Icon.Default.mergeOptions({
-            iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-          });
+  inicializarMapaDespuesDeVista() {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    const container = this.containerElement.nativeElement;
+    if (container.clientWidth > 0 && container.clientHeight > 0) {
+      this.cargarLeafletEInicializarMapa();
+    } else {
+      this.resizeObserver = new ResizeObserver(() => {
+        if (container.clientWidth > 0 && container.clientHeight > 0) {
+          this.resizeObserver?.disconnect();
+          this.cargarLeafletEInicializarMapa();
         }
-      }, 0);
+      });
+      this.resizeObserver.observe(container);
     }
   }
 
-  cargarRutas() {
-    this.apiService.obtenerRutasPorPerfil(this.apiService.PERFIL_ID).subscribe({
-      next: (res: any) => {
-        this.rutas = res.data || res || [];
-      },
-      error: (err) => {
-        console.error('Error al cargar rutas:', err);
-      }
-    });
+  private async cargarLeafletEInicializarMapa() {
+    await this.cargarLeaflet();
+    this.inicializarMapa();
   }
 
-  cargarCalles() {
-    this.apiService.obtenerCalles().subscribe({
-      next: (res: any) => {
-        this.calles = res.data || res || [];
-      },
-      error: (err) => {
-        console.error('Error al cargar calles:', err);
-      }
-    });
-  }
-
-  abrirFormularioCrear() {
-    this.formulario = { nombre_ruta: '' };
-    this.callesSeleccionadas = [];
-    this.mensajeError = '';
-    this.mostrarFormulario = true;
-    
-    // Solo inicializar el mapa en el navegador (no en SSR)
-    if (isPlatformBrowser(this.platformId)) {
-      setTimeout(async () => {
-        await this.cargarLeaflet();
-        this.inicializarMapa();
-      }, 100);
-    }
-  }
-
-  async cargarLeaflet() {
+  private async cargarLeaflet() {
     if (!this.L) {
       this.L = await import('leaflet');
     }
   }
 
-  cerrarFormulario() {
-    this.mostrarFormulario = false;
-    if (this.mapa) {
-      this.mapa.remove();
-      this.mapa = null;
-    }
-    this.capasCalles.clear();
-  }
-
-  inicializarMapa() {
-    if (this.mapa) {
-      this.mapa.remove();
-    }
-
+  private inicializarMapa() {
     if (!this.L) return;
 
-    // Coordenadas de Buenaventura, Colombia
-    this.mapa = this.L.map('mapa').setView([3.8801, -77.0312], 13);
-
-    this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(this.mapa);
-
-    // Agregar calles al mapa
-    this.calles.forEach(calle => {
-      try {
-        const geojson = JSON.parse(calle.shape);
-        const capa = this.L.geoJSON(geojson, {
-          style: {
-            color: '#95a5a6',
-            weight: 4,
-            opacity: 0.7
-          }
-        }).addTo(this.mapa);
-
-        capa.on('click', () => {
-          this.toggleCalle(calle);
-        });
-
-        this.capasCalles.set(calle.id, capa);
-      } catch (e) {
-        console.warn(`No se pudo parsear la geometría de la calle ${calle.nombre}`);
+    this.ngZone.runOutsideAngular(() => {
+      // Limpiar si ya existe
+      if (this.map) {
+        try {
+          this.map.remove();
+        } catch {}
       }
+
+      // Crear mapa usando el elemento directamente
+      this.map = this.L.map(this.mapElement.nativeElement, {
+        preferCanvas: true,
+        zoomControl: true,
+        minZoom: 3,
+        maxZoom: 19,
+      });
+
+      this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19,
+      }).addTo(this.map);
+
+      // Configurar iconos de Leaflet
+      delete (this.L.Icon.Default.prototype as any)._getIconUrl;
+      this.L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      });
+
+      // Asegurar que Leaflet recalcule tamaño al estar listo
+      this.map.whenReady(() => this.map.invalidateSize());
+
+      // Geolocalización (si el usuario lo permite)
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            this.map.setView([pos.coords.latitude, pos.coords.longitude], 14);
+            this.L.marker([pos.coords.latitude, pos.coords.longitude])
+              .addTo(this.map)
+              .bindPopup('Tu ubicación actual');
+            this.dibujarRutas();
+            this.forzarRedraw();
+          },
+          () => {
+            // Fallback a Buenaventura
+            this.map.setView([3.8777, -77.0276], 13);
+            this.dibujarRutas();
+            this.forzarRedraw();
+          },
+          { enableHighAccuracy: false, timeout: 5000 }
+        );
+      } else {
+        this.map.setView([3.8777, -77.0276], 13);
+        this.dibujarRutas();
+        this.forzarRedraw();
+      }
+
+      // Observador para redimensionar correctamente
+      this.resizeObserver = new ResizeObserver(() => {
+        if (this.map) this.map.invalidateSize();
+      });
+      this.resizeObserver.observe(this.mapElement.nativeElement);
+
+      this.onWindowResize = () => {
+        if (this.map) this.map.invalidateSize();
+      };
+      window.addEventListener('resize', this.onWindowResize);
     });
   }
 
-  toggleCalle(calle: Calle) {
-    const index = this.callesSeleccionadas.findIndex(c => c.id === calle.id);
-    const capa = this.capasCalles.get(calle.id);
-
-    if (index > -1) {
-      // Quitar selección
-      this.callesSeleccionadas.splice(index, 1);
-      if (capa) {
-        capa.setStyle({ color: '#95a5a6', weight: 4 });
-      }
-    } else {
-      // Agregar selección
-      this.callesSeleccionadas.push(calle);
-      if (capa) {
-        capa.setStyle({ color: '#3498db', weight: 6 });
-      }
-    }
-  }
-
-  quitarCalle(calle: Calle) {
-    const index = this.callesSeleccionadas.findIndex(c => c.id === calle.id);
-    if (index > -1) {
-      this.callesSeleccionadas.splice(index, 1);
-      const capa = this.capasCalles.get(calle.id);
-      if (capa) {
-        capa.setStyle({ color: '#95a5a6', weight: 4 });
-      }
-    }
-  }
-
-  guardarRuta() {
-    if (!this.formulario.nombre_ruta.trim()) {
-      this.mensajeError = 'El nombre de la ruta es obligatorio';
-      return;
-    }
-
-    if (this.callesSeleccionadas.length === 0) {
-      this.mensajeError = 'Debes seleccionar al menos una calle';
-      return;
-    }
-
-    this.cargando = true;
-    this.mensajeError = '';
-
-    const nuevaRuta: CrearRuta = {
-      nombre_ruta: this.formulario.nombre_ruta,
-      calles: this.callesSeleccionadas.map(c => c.id),
-      perfil_id: this.apiService.PERFIL_ID
-    };
-
-    this.apiService.crearRuta(nuevaRuta).subscribe({
-      next: () => {
-        this.cargando = false;
-        this.cerrarFormulario();
-        this.cargarRutas();
+  private cargarRutas() {
+    this.loading = true;
+    this.apiService.obtenerRutasPorPerfil(this.apiService.PERFIL_ID).subscribe({
+      next: (res: any) => {
+        console.log('Respuesta de rutas:', res);
+        this.rutas = res.data || res || [];
+        console.log('Rutas cargadas:', this.rutas);
+        this.loading = false;
+        // Si el mapa ya existe, dibujar
+        if (this.map) {
+          this.dibujarRutas();
+        }
       },
       error: (err) => {
-        this.cargando = false;
-        this.mensajeError = err.error?.message || 'Error al crear la ruta';
+        console.error('Error al cargar rutas:', err);
+        this.loading = false;
+      },
+    });
+  }
+
+  // Demo de rutas si la API no tiene datos
+  private cargarRutasDemo() {
+    this.rutas = [
+      {
+        id: '1',
+        perfil_id: this.apiService.PERFIL_ID,
+        nombre_ruta: 'Ruta Bellavista',
+        color_hex: '#ff0000',
+        shape: JSON.stringify({
+          type: 'LineString',
+          coordinates: [
+            [-77.0276, 3.8777],
+            [-77.03, 3.88],
+          ],
+        }),
+      },
+      {
+        id: '2',
+        perfil_id: this.apiService.PERFIL_ID,
+        nombre_ruta: 'Ruta Juan 23',
+        color_hex: '#0000ff',
+        shape: JSON.stringify({
+          type: 'LineString',
+          coordinates: [
+            [-77.0276, 3.8777],
+            [-77.025, 3.875],
+          ],
+        }),
+      },
+    ];
+    this.loading = false;
+    if (this.map) this.dibujarRutas();
+  }
+
+  private dibujarRutas() {
+    if (!this.map || !this.L) return;
+
+    // Eliminar capas anteriores
+    this.routeLayers.forEach((layer) => {
+      try {
+        this.map.removeLayer(layer);
+      } catch {}
+    });
+    this.routeLayers = [];
+
+    this.rutas.forEach((ruta) => {
+      if (!ruta.shape) return;
+      try {
+        const geojson = JSON.parse(ruta.shape);
+        const layer = this.L.geoJSON(geojson, {
+          style: { color: ruta.color_hex, weight: 4, opacity: 0.85 },
+        }).addTo(this.map);
+        this.routeLayers.push(layer);
+      } catch (e) {
+        console.error('GeoJSON inválido', e);
       }
     });
+
+    if (this.routeLayers.length) {
+      const group = this.L.featureGroup(this.routeLayers);
+      this.map.fitBounds(group.getBounds(), { padding: [20, 20] });
+      setTimeout(() => this.map.invalidateSize(), 200);
+    }
+
+    this.forzarRedraw();
+  }
+
+  zoomToRuta(ruta: Ruta) {
+    if (!ruta.shape || !this.map || !this.L) return;
+    try {
+      const geojson = JSON.parse(ruta.shape);
+      const layer = this.L.geoJSON(geojson);
+      this.map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+      this.forzarRedraw();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  private forzarRedraw() {
+    if (!this.map) return;
+    requestAnimationFrame(() => this.map.invalidateSize());
+    setTimeout(() => this.map.invalidateSize(), 120);
+    setTimeout(() => this.map.invalidateSize(), 400);
+  }
+
+  limpiar() {
+    if (this.onWindowResize) {
+      window.removeEventListener('resize', this.onWindowResize);
+    }
+    this.resizeObserver?.disconnect();
+    if (this.map) {
+      try {
+        this.map.remove();
+      } catch {}
+    }
   }
 }

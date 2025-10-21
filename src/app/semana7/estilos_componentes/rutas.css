@@ -1,335 +1,163 @@
-.rutas-contenedor {
+:host {
+  display: block;
+  width: 100%;
+}
+
+.container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 30px 20px;
 }
 
-.encabezado {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  flex-wrap: wrap;
-  gap: 15px;
-}
-
 h2 {
   color: #2c3e50;
-  margin: 0;
+  margin: 0 0 20px 0;
   font-size: 2rem;
 }
 
-.subtitulo {
-  color: #7f8c8d;
-  margin: 5px 0 0 0;
-}
-
-.btn-nuevo {
-  background: #2ecc71;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-nuevo:hover {
-  background: #27ae60;
-  transform: translateY(-2px);
-}
-
-.lista-rutas {
-  background: white;
-  border-radius: 12px;
-  padding: 30px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-}
-
-.lista-rutas h3 {
-  margin-top: 0;
-  color: #2c3e50;
-  margin-bottom: 20px;
-}
-
-.tarjetas-rutas {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-.tarjeta-ruta {
-  background: #f8f9fa;
-  border-radius: 10px;
+.loading {
+  text-align: center;
   padding: 20px;
-  border-left: 4px solid #3498db;
-  transition: all 0.2s;
-}
-
-.tarjeta-ruta:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.ruta-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 15px;
-}
-
-.color-indicador {
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-.ruta-header h4 {
-  margin: 0;
-  color: #2c3e50;
+  color: #7f8c8d;
   font-size: 1.1rem;
 }
 
-.ruta-info p {
-  margin: 5px 0;
-  color: #555;
-}
-
-.ruta-id {
-  font-size: 0.85rem;
-  color: #999;
-}
-
-.sin-datos {
-  padding: 60px 20px;
-  text-align: center;
-  color: #7f8c8d;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+.content-wrapper {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
-.modal-contenido-grande {
-  background: white;
-  border-radius: 12px;
-  width: 95%;
-  max-width: 1200px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 25px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.modal-header h3 {
-  margin: 0;
-  color: #2c3e50;
-}
-
-.btn-cerrar {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #7f8c8d;
-  padding: 0;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  transition: all 0.2s;
-}
-
-.btn-cerrar:hover {
-  background: #f0f0f0;
-  color: #2c3e50;
-}
-
-.formulario-mapa {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
   gap: 25px;
-  padding: 25px;
+  margin-top: 20px;
+  align-items: flex-start;
 }
 
-@media (max-width: 900px) {
-  .formulario-mapa {
-    grid-template-columns: 1fr;
+@media (max-width: 1000px) {
+  .content-wrapper {
+    flex-direction: column;
+  }
+
+  #container-mapa {
+    width: 100% !important;
+    max-width: 100%;
   }
 }
 
-.seccion-formulario {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.campo label {
-  display: block;
-  margin-bottom: 8px;
-  color: #2c3e50;
-  font-weight: 500;
-}
-
-.input-texto {
-  width: 100%;
-  padding: 10px 15px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-}
-
-.input-texto:focus {
-  outline: none;
-  border-color: #2ecc71;
-}
-
-.lista-calles-seleccionadas {
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 10px;
-  max-height: 300px;
-  overflow-y: auto;
-  background: #f8f9fa;
-}
-
-.item-calle {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: white;
-  border-radius: 6px;
-  margin-bottom: 8px;
-}
-
-.item-calle:last-child {
-  margin-bottom: 0;
-}
-
-.btn-quitar {
-  background: #e74c3c;
-  color: white;
-  border: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s;
-}
-
-.btn-quitar:hover {
-  background: #c0392b;
-  transform: scale(1.1);
-}
-
-.texto-ayuda {
-  color: #7f8c8d;
-  font-size: 0.9rem;
-  text-align: center;
-  margin: 20px 0;
-}
-
-.mensaje-error {
-  background: #f8d7da;
-  color: #721c24;
-  padding: 12px;
-  border-radius: 6px;
-}
-
-.botones-formulario {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
-.btn-cancelar {
-  background: #e0e0e0;
-  color: #2c3e50;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-cancelar:hover {
-  background: #d0d0d0;
-}
-
-.btn-guardar {
-  background: #2ecc71;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-guardar:hover:not(:disabled) {
-  background: #27ae60;
-}
-
-.btn-guardar:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.seccion-mapa {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.mapa-contenedor {
-  width: 100%;
-  height: 500px;
-  border-radius: 8px;
+#container-mapa {
+  width: 60%;
+  min-width: 400px;
+  height: 600px;
+  position: relative;
   overflow: hidden;
-  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  background: #f2f2f2;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 }
 
-.leyenda-mapa {
-  background: #f8f9fa;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
+#map {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
-.leyenda-mapa p {
-  margin: 0 0 10px 0;
+.rutas-lista {
+  flex: 1;
+  min-width: 320px;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+th {
+  background-color: #f8f9fa;
   color: #2c3e50;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.leyenda-mapa ul {
-  margin: 0;
-  padding-left: 20px;
+tbody tr {
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.leyenda-mapa li {
-  color: #555;
-  margin-bottom: 5px;
+tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.color-box {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  margin-right: 10px;
+  vertical-align: middle;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-zoom {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-zoom:hover {
+  background: #2980b9;
+  transform: translateY(-1px);
+}
+
+.sin-rutas {
+  text-align: center;
+  padding: 40px 20px;
+  color: #7f8c8d;
+  font-size: 1rem;
+}
+
+/* Ajustes para dispositivos móviles */
+@media (max-width: 768px) {
+  .container {
+    padding: 15px;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  #container-mapa {
+    height: 400px;
+    min-width: 100%;
+  }
+
+  .rutas-lista {
+    min-width: 100%;
+  }
+
+  th,
+  td {
+    padding: 8px;
+    font-size: 0.9rem;
+  }
+
+  .color-box {
+    width: 16px;
+    height: 16px;
+  }
 }
