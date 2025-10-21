@@ -29,8 +29,8 @@ export class RutasMapaLogica {
   }
 
   inicializar() {
-    this.cargarRutas();
-    //this.cargarRutasDemo();
+    this.cargarRutas(); // sospecho que el mapa se pone todo gris usando este metodo
+    //this.cargarRutasDemo(); // se ve el mapa descuadrado pero al menos se ven las rutas de la demo
     // this.inicializarMapaDespuesDeVista();
   }
 
