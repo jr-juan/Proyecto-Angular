@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
-import { TableroComponent } from './semana10/paginas/tablero.component';
-import { VehiculosComponent } from './semana10/paginas/vehiculos.component';
-import { RutasComponent } from './semana10/paginas/rutas.component';
-import { LoginComponent } from './semana10/inicio_y_registro/login.component';
-import { RegistroComponent } from './semana10/inicio_y_registro/registro.component';
+import { TableroComponent } from './semana11/paginas/tablero.component';
+import { VehiculosComponent } from './semana11/paginas/vehiculos.component';
+import { RutasComponent } from './semana11/paginas/rutas.component';
+import { LoginComponent } from './semana11/inicio_y_registro/login.component';
+import { RegistroComponent } from './semana11/inicio_y_registro/registro.component';
 
 
 import { AuthGuard, redirectUnauthorizedTo } from '@angular/fire/auth-guard';

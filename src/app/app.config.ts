@@ -1,12 +1,15 @@
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { routes } from './app.routes';
 
 
 // 1. Importaciones de Firebase 
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideAuth, getAuth } from '@angular/fire/auth';
+
+import { authTokenInterceptor } from './servicios/auth-token-interceptor';
+
 
 // 2. Credenciales de Firebase 
 const firebaseConfig = {
@@ -22,10 +25,11 @@ const firebaseConfig = {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection(), 
-    provideHttpClient(),
     provideRouter(routes),
 
-    // 3. Configuración de AngularFire
+    provideHttpClient(withInterceptors([authTokenInterceptor])),
+
+    // Configuración de AngularFire
     provideFirebaseApp(() => initializeApp(firebaseConfig)),
     provideAuth(() => getAuth())
   ]
