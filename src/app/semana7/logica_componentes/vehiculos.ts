@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from '../servicios/api.service';
-import { Vehiculo, CrearVehiculo, ActualizarVehiculo } from '../modelos/interfaces';
+import { Vehiculo } from '../modelos/interfaces';
+import { timeout, catchError } from 'rxjs/operators';
+import { throwError } from 'rxjs';
 
 @Injectable()
 export class VehiculosLogica {
@@ -16,19 +18,25 @@ export class VehiculosLogica {
   vehiculoAEliminar: Vehiculo | null = null;
 
   cargando = false;
+  //cargandoLista = false;
+  //cargandoEliminar = false;
   mensajeError = '';
+  mensajeExito = '';
 
   formulario = {
     perfil_id: '',
     placa: '',
     marca: '',
     modelo: '',
-    capacidad: 0,
-    tipo_combustible: '',
     activo: true,
   };
 
   constructor(private apiService: ApiService) {}
+
+  limpiarMensaje(tipo: 'error' | 'exito' | 'ninguno' = 'ninguno') {
+    if (tipo === 'error' || tipo === 'ninguno') this.mensajeError = '';
+    if (tipo === 'exito' || tipo === 'ninguno') this.mensajeExito = '';
+  }
 
   inicializar() {
     this.formulario = {
@@ -36,38 +44,53 @@ export class VehiculosLogica {
       placa: '',
       marca: '',
       modelo: '',
-      capacidad: 0,
-      tipo_combustible: '',
       activo: true,
     };
+    this.limpiarMensaje('ninguno');
     this.cargarVehiculos();
   }
 
   cargarVehiculos() {
-    this.apiService.obtenerVehiculos().subscribe({
-      next: (res: any) => {
-        this.vehiculos = res.data || res || [];
-        this.vehiculosFiltrados = this.vehiculos;
-      },
-      error: (err) => {
-        console.error('Error al cargar vehículos:', err);
-        this.mensajeError = 'Error al cargar los vehículos';
-      },
-    });
+    this.limpiarMensaje('error');
+    // this.cargandoLista = true;
+    this.apiService
+      .obtenerVehiculos()
+      .pipe(
+        timeout(10000),
+        catchError((err) => {
+          //    this.cargandoLista = false;
+          console.error('Error al cargar vehículos:', err);
+          if (err.name === 'TimeoutError') {
+            this.mensajeError = 'La conexión tardó demasiado. Verifica que la API esté activa.';
+          } else {
+            this.mensajeError =
+              'Error al cargar los vehículos: ' +
+              (err.error?.message || err.message || 'API no disponible');
+          }
+          return throwError(() => err);
+        })
+      )
+      .subscribe({
+        next: (res) => {
+          this.vehiculos = res.data || [];
+          this.vehiculosFiltrados = this.vehiculos;
+          this.filtrarVehiculos();
+          //     this.cargandoLista = false;
+        },
+        error: () => {
+          //    this.cargandoLista = false;
+        },
+      });
   }
 
   filtrarVehiculos() {
-    if (!this.busqueda) {
-      this.vehiculosFiltrados = this.vehiculos;
-    } else {
-      const busquedaLower = this.busqueda.toLowerCase();
-      this.vehiculosFiltrados = this.vehiculos.filter(
-        (v) =>
-          v.placa.toLowerCase().includes(busquedaLower) ||
-          v.marca.toLowerCase().includes(busquedaLower) ||
-          v.modelo.toLowerCase().includes(busquedaLower)
-      );
-    }
+    const busquedaLower = this.busqueda.toLowerCase();
+    this.vehiculosFiltrados = this.vehiculos.filter(
+      (v) =>
+        v.placa.toLowerCase().includes(busquedaLower) ||
+        (v.marca?.toLowerCase() ?? '').includes(busquedaLower) ||
+        (v.modelo?.toLowerCase() ?? '').includes(busquedaLower)
+    );
   }
 
   abrirFormularioCrear() {
@@ -78,11 +101,9 @@ export class VehiculosLogica {
       placa: '',
       marca: '',
       modelo: '',
-      capacidad: 0,
-      tipo_combustible: '',
       activo: true,
     };
-    this.mensajeError = '';
+    this.limpiarMensaje('ninguno');
     this.mostrarFormulario = true;
   }
 
@@ -92,101 +113,137 @@ export class VehiculosLogica {
     this.formulario = {
       perfil_id: this.apiService.PERFIL_ID,
       placa: vehiculo.placa,
-      marca: vehiculo.marca,
-      modelo: vehiculo.modelo,
-      capacidad: vehiculo.capacidad,
-      tipo_combustible: vehiculo.tipo_combustible,
+      marca: vehiculo.marca ?? '',
+      modelo: vehiculo.modelo ?? '',
       activo: vehiculo.activo,
     };
-    this.mensajeError = '';
+    this.limpiarMensaje('ninguno');
     this.mostrarFormulario = true;
   }
 
   cerrarFormulario() {
     this.mostrarFormulario = false;
-    this.mensajeError = '';
+    this.limpiarMensaje('ninguno');
   }
 
   guardarVehiculo() {
-    if (
-      !this.formulario.placa ||
-      !this.formulario.marca ||
-      !this.formulario.modelo ||
-      !this.formulario.capacidad ||
-      !this.formulario.tipo_combustible
-    ) {
-      this.mensajeError = 'Todos los campos son obligatorios';
+    if (!this.formulario.placa || !this.formulario.marca || !this.formulario.modelo) {
+      this.mensajeError = 'La placa, marca y modelo son obligatorios.';
       return;
     }
 
     this.cargando = true;
-    this.mensajeError = '';
+    this.limpiarMensaje('ninguno');
 
-    if (this.modoEdicion && this.vehiculoEditando) {
-      const datos: ActualizarVehiculo = {
-        perfil_id: this.formulario.perfil_id,
-        placa: this.formulario.placa,
-        marca: this.formulario.marca,
-        modelo: this.formulario.modelo,
-        capacidad: this.formulario.capacidad,
-        tipo_combustible: this.formulario.tipo_combustible,
-        activo: this.formulario.activo,
-      };
+    const vehiculoAEnviar: Vehiculo = {
+      perfil_id: this.apiService.PERFIL_ID,
+      placa: this.formulario.placa,
+      marca: this.formulario.marca === '' ? null : this.formulario.marca,
+      modelo: this.formulario.modelo === '' ? null : this.formulario.modelo,
+      activo: this.formulario.activo,
+    };
 
-      this.apiService.actualizarVehiculo(this.vehiculoEditando.id, datos).subscribe({
+    const operacion =
+      this.modoEdicion && this.vehiculoEditando && this.vehiculoEditando.id
+        ? this.apiService.actualizarVehiculo(this.vehiculoEditando.id, vehiculoAEnviar)
+        : this.apiService.crearVehiculo(vehiculoAEnviar);
+
+    operacion
+      .pipe(
+        timeout(10000),
+        catchError((err) => {
+          this.cargando = false;
+
+          if (err.name === 'TimeoutError') {
+            this.mensajeError = 'La operación tardó demasiado. Verifica que la API esté activa.';
+          } else if (err.status === 422) {
+            if (err.error?.message?.includes('placa has already been taken')) {
+              this.mensajeError = 'Esta placa ya existe. Usa una placa diferente.';
+            } else {
+              this.mensajeError = 'Datos inválidos. Verifica la información.';
+            }
+          } else if (err.status === 0) {
+            this.mensajeError = 'No se pudo conectar con la API. Verifica que esté activa.';
+          } else {
+            this.mensajeError = err.error?.message || 'Error al procesar el vehículo.';
+          }
+
+          console.error('Error de operación:', err);
+          return throwError(() => err);
+        })
+      )
+      .subscribe({
         next: () => {
           this.cargando = false;
           this.cerrarFormulario();
-          this.cargarVehiculos();
-        },
-        error: (err) => {
-          this.cargando = false;
-          this.mensajeError = err.error?.message || 'Error al actualizar el vehículo';
-        },
-      });
-    } else {
-      const nuevoVehiculo: CrearVehiculo = {
-        ...this.formulario,
-        perfil_id: this.apiService.PERFIL_ID,
-      };
+          this.mensajeExito = this.modoEdicion
+            ? 'Vehículo actualizado con éxito.'
+            : 'Vehículo creado con éxito.';
+          this.cargarVehiculos(); // Limpiar mensaje después de 3 segundos
 
-      this.apiService.crearVehiculo(nuevoVehiculo).subscribe({
-        next: () => {
-          this.cargando = false;
-          this.cerrarFormulario();
-          this.cargarVehiculos();
+          setTimeout(() => {
+            this.limpiarMensaje('exito');
+          }, 3000);
         },
-        error: (err) => {
-          this.cargando = false;
-          this.mensajeError = err.error?.message || 'Error al crear el vehículo';
+        error: () => {
+          // Aquí ya se manejó el cargando=false en catchError
         },
       });
-    }
   }
 
   confirmarEliminar(vehiculo: Vehiculo) {
     this.vehiculoAEliminar = vehiculo;
     this.mostrarConfirmacion = true;
+    this.limpiarMensaje('ninguno');
   }
 
   cerrarConfirmacion() {
     this.mostrarConfirmacion = false;
     this.vehiculoAEliminar = null;
+    //this.cargandoEliminar = false;
+    this.limpiarMensaje('ninguno'); // Limpiamos mensajes al cerrar
   }
 
   eliminarVehiculo() {
-    if (!this.vehiculoAEliminar) return;
+    if (!this.vehiculoAEliminar || !this.vehiculoAEliminar.id) return;
 
-    this.apiService.eliminarVehiculo(this.vehiculoAEliminar.id).subscribe({
-      next: () => {
-        this.cerrarConfirmacion();
-        this.cargarVehiculos();
-      },
-      error: (err) => {
-        console.error('Error al eliminar:', err);
-        alert('Error al eliminar el vehículo');
-        this.cerrarConfirmacion();
-      },
-    });
+    // this.cargandoEliminar = true;
+    this.limpiarMensaje('ninguno');
+
+    this.apiService
+      .eliminarVehiculo(this.vehiculoAEliminar.id)
+      .pipe(
+        timeout(10000),
+        catchError((err) => {
+          //   this.cargandoEliminar = false;
+
+          if (err.name === 'TimeoutError') {
+            this.mensajeError = 'La operación tardó demasiado. Verifica que la API esté activa.';
+          } else if (err.status === 0) {
+            this.mensajeError = 'No se pudo conectar con la API.';
+          } else {
+            this.mensajeError = err.error?.message || 'Error al eliminar el vehículo.';
+          }
+          console.error('Error al eliminar:', err);
+          return throwError(() => err);
+        })
+      )
+      .subscribe({
+        next: () => {
+          const placaEliminada = this.vehiculoAEliminar?.placa;
+          //  this.cargandoEliminar = false;
+          this.cerrarConfirmacion(); // Cerramos solo en caso de éxito
+          this.mensajeExito = `Vehículo con placa ${placaEliminada} eliminado con éxito.`; // Recargar lista inmediatamente
+
+          this.cargarVehiculos(); // Limpiar mensaje después de 3 segundos
+
+          setTimeout(() => {
+            this.limpiarMensaje('exito');
+          }, 3000);
+        },
+        error: () => {
+          // Aquí ya se manejó el cargandoEliminar=false en catchError
+        },
+      });
   }
 }
