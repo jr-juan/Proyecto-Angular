@@ -1,52 +1,29 @@
-// Interfaces para tipado fuerte en TypeScript de los modelos de datos, cualquier cosa lo buscan.
+// Interfaces para tipado fuerte en TypeScript de los modelos de datos.
 
 export interface Ruta {
-  id: string;
+  id?: string; 
   perfil_id: string;
   nombre_ruta: string;
-  color_hex: string;
-  shape: string;
-  created_at?: string;
-  updated_at?: string;
+  color_hex?: string; 
+  shape?: string; // GeoJSON en string coomo en la API 
 }
 
 export interface CrearRuta {
   nombre_ruta: string;
-  calles: string[]; // Array de UUIDs de calles
   perfil_id: string;
+  color_hex?: string; 
+  shape?: string; // String JSON GeoJSON
+  calles_ids?: string[]; 
 }
+
 
 export interface Vehiculo {
-  id: string;
+  id?: string; // Opcional para la creación
   perfil_id: string;
   placa: string;
-  marca: string;
-  modelo: string;
-  capacidad: number;
-  tipo_combustible: string;
+  marca: string | null; 
+  modelo: string | null; 
   activo: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface CrearVehiculo {
-  perfil_id: string;
-  placa: string;
-  marca: string;
-  modelo: string;
-  capacidad: number;
-  tipo_combustible: string;
-  activo: boolean;
-}
-
-export interface ActualizarVehiculo {
-  perfil_id?: string;
-  placa?: string;
-  marca?: string;
-  modelo?: string;
-  capacidad?: number;
-  tipo_combustible?: string;
-  activo?: boolean;
 }
 
 export interface Calle {
