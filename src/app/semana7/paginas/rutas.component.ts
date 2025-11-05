@@ -1,12 +1,12 @@
 import { Component, AfterViewInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RutasMapaLogica } from '../logica_componentes/rutas';
+import { RutasMapaLogica } from '../logica_componentes/rutas'; 
 
 @Component({
   selector: 'app-rutas-mapa',
   standalone: true,
   imports: [CommonModule],
-  providers: [RutasMapaLogica],
+  providers: [RutasMapaLogica], 
   styleUrls: ['../estilos_componentes/rutas.css'],
   template: `
     <div class="container">
@@ -68,10 +68,8 @@ export class RutasMapaComponent implements AfterViewInit, OnDestroy {
   constructor(public logica: RutasMapaLogica) {}
 
   ngAfterViewInit(): void {
-    // Pasar referencias de elementos al servicio lógico
-    this.logica.setElements(this.containerRef, this.mapRef);
+    this.logica.setMapElement(this.mapRef); 
     this.logica.inicializar();
-    this.logica.inicializarMapaDespuesDeVista();
   }
 
   ngOnDestroy(): void {
