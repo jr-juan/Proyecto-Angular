@@ -11,6 +11,10 @@
       <a routerLink="/tablero" routerLinkActive="activo" class="nav-link"> Tablero </a>
       <a routerLink="/vehiculos" routerLinkActive="activo" class="nav-link"> Vehículos </a>
       <a routerLink="/rutas" routerLinkActive="activo" class="nav-link"> Rutas </a>
+
+      <button (click)="cerrarSesion()" class="nav-link btn-logout">
+        Cerrar Sesión
+      </button>
     </nav>
   </div>
 </header>
@@ -77,5 +81,17 @@
 
   .contenido-principal.sin-header {
     min-height: 100vh;
+  }
+
+  .btn-logout {
+    background: #e74c3c;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .btn-logout:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
   }
 </style>

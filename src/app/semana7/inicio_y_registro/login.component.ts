@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../servicios/auth';
 
 @Component({
   selector: 'app-login',
@@ -11,10 +12,30 @@ import { Router, RouterModule } from '@angular/router';
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
-  constructor(private router: Router) {}
+  email = '';
+  password = '';
 
-  iniciarSesion() {
-    // Por ahora sin autenticación, solo navega al tablero
-    this.router.navigate(['/tablero']);
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) { }
+
+  async iniciarSesion() {
+    if (!this.email || !this.password) {
+      alert('Por favor, ingresa correo y contraseña.');
+      return;
+    }
+
+    const user = await this.authService.login({
+      email: this.email,
+      password: this.password
+    });
+
+    if (user) {
+      // Si el login es exitoso, navegamos al tablero
+      this.router.navigate(['/tablero']);
+    } else {
+      alert('Error en el correo o la contraseña. Por favor, inténtalo de nuevo.');
+    }
   }
 }
