@@ -18,8 +18,6 @@ export class VehiculosLogica {
   vehiculoAEliminar: Vehiculo | null = null;
 
   cargando = false;
-  //cargandoLista = false;
-  //cargandoEliminar = false;
   mensajeError = '';
   mensajeExito = '';
 
@@ -52,13 +50,13 @@ export class VehiculosLogica {
 
   cargarVehiculos() {
     this.limpiarMensaje('error');
-    // this.cargandoLista = true;
+    
     this.apiService
       .obtenerVehiculos()
       .pipe(
         timeout(10000),
         catchError((err) => {
-          //    this.cargandoLista = false;
+          
           console.error('Error al cargar vehículos:', err);
           if (err.name === 'TimeoutError') {
             this.mensajeError = 'La conexión tardó demasiado. Verifica que la API esté activa.';
@@ -75,10 +73,10 @@ export class VehiculosLogica {
           this.vehiculos = res.data || [];
           this.vehiculosFiltrados = this.vehiculos;
           this.filtrarVehiculos();
-          //     this.cargandoLista = false;
+          
         },
         error: () => {
-          //    this.cargandoLista = false;
+          
         },
       });
   }
@@ -179,14 +177,14 @@ export class VehiculosLogica {
           this.mensajeExito = this.modoEdicion
             ? 'Vehículo actualizado con éxito.'
             : 'Vehículo creado con éxito.';
-          this.cargarVehiculos(); // Limpiar mensaje después de 3 segundos
+          this.cargarVehiculos(); 
 
           setTimeout(() => {
             this.limpiarMensaje('exito');
           }, 3000);
         },
         error: () => {
-          // Aquí ya se manejó el cargando=false en catchError
+          
         },
       });
   }
@@ -200,14 +198,14 @@ export class VehiculosLogica {
   cerrarConfirmacion() {
     this.mostrarConfirmacion = false;
     this.vehiculoAEliminar = null;
-    //this.cargandoEliminar = false;
+    
     this.limpiarMensaje('ninguno'); // Limpiamos mensajes al cerrar
   }
 
   eliminarVehiculo() {
     if (!this.vehiculoAEliminar || !this.vehiculoAEliminar.id) return;
 
-    // this.cargandoEliminar = true;
+    
     this.limpiarMensaje('ninguno');
 
     this.apiService
@@ -215,7 +213,7 @@ export class VehiculosLogica {
       .pipe(
         timeout(10000),
         catchError((err) => {
-          //   this.cargandoEliminar = false;
+          
 
           if (err.name === 'TimeoutError') {
             this.mensajeError = 'La operación tardó demasiado. Verifica que la API esté activa.';
@@ -231,7 +229,7 @@ export class VehiculosLogica {
       .subscribe({
         next: () => {
           const placaEliminada = this.vehiculoAEliminar?.placa;
-          //  this.cargandoEliminar = false;
+         
           this.cerrarConfirmacion(); // Cerramos solo en caso de éxito
           this.mensajeExito = `Vehículo con placa ${placaEliminada} eliminado con éxito.`; // Recargar lista inmediatamente
 
@@ -242,7 +240,7 @@ export class VehiculosLogica {
           }, 3000);
         },
         error: () => {
-          // Aquí ya se manejó el cargandoEliminar=false en catchError
+          
         },
       });
   }

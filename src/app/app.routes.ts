@@ -2,8 +2,8 @@ import { Routes } from '@angular/router';
 import { TableroComponent } from './semana7/paginas/tablero.component';
 import { VehiculosComponent } from './semana7/paginas/vehiculos.component';
 import { RutasMapaComponent } from './semana7/paginas/rutas.component';
-import { LoginComponent } from './semana7/inicio_y_registro/login.component';
-import { RegistroComponent } from './semana7/inicio_y_registro/registro.component';
+import { LoginComponent } from './semana7/logica_componentes/login.logica';
+import { RegistroComponent } from './semana7/logica_componentes/registro.logica';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
