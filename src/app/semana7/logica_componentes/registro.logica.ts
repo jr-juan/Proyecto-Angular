@@ -8,8 +8,8 @@ import { AuthService } from '../servicios/auth';
   selector: 'app-registro',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
-  templateUrl: './registro.component.html',
-  styleUrls: ['../estilos_componentes/registro.css'],
+  templateUrl: '../inicio_y_registro/registro.component.html',
+  styleUrls: ['../estilos_componentes/registro.component.css'],
 })
 export class RegistroComponent {
   // Variables para todos los campos del formulario
