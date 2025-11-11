@@ -70,13 +70,14 @@ export class VehiculosLogica {
       )
       .subscribe({
         next: (res) => {
+          console.log('Vehículos cargados:', res);
           this.vehiculos = res.data || [];
           this.vehiculosFiltrados = this.vehiculos;
           this.filtrarVehiculos();
           
         },
         error: () => {
-          
+          console.log('No se pudieron cargar los vehículos.');
         },
       });
   }
@@ -172,6 +173,8 @@ export class VehiculosLogica {
       )
       .subscribe({
         next: () => {
+          console.log('Operación de vehículo exitosa.', this.modoEdicion ? 'Actualizado' : 'Creado');
+         // console.log(vehiculoAEnviar);
           this.cargando = false;
           this.cerrarFormulario();
           this.mensajeExito = this.modoEdicion
@@ -184,7 +187,7 @@ export class VehiculosLogica {
           }, 3000);
         },
         error: () => {
-          
+           console.log('No se pudo completar la operación del vehículo.');
         },
       });
   }
@@ -228,6 +231,7 @@ export class VehiculosLogica {
       )
       .subscribe({
         next: () => {
+          console.log('Vehículo eliminado con éxito.');
           const placaEliminada = this.vehiculoAEliminar?.placa;
          
           this.cerrarConfirmacion(); // Cerramos solo en caso de éxito
@@ -240,7 +244,7 @@ export class VehiculosLogica {
           }, 3000);
         },
         error: () => {
-          
+          console.log('No se pudo eliminar el vehículo.');
         },
       });
   }
