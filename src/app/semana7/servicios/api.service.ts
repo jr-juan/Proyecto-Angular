@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { from, map, Observable, of, switchMap, throwError } from 'rxjs';
-
+import { environmentApi, environmentPerfilId } from '../../../environments/environment';
 import { Auth } from '@angular/fire/auth';
 import {
   Firestore,
@@ -22,11 +22,11 @@ import { Ruta, CrearRuta, Vehiculo, Calle, RespuestaAPI } from '../modelos/inter
   providedIn: 'root',
 })
 export class ApiService {
-  // Nota: Lo ideal es usar 'environment.ts', pero para consistencia usamos la URL directa
-  private urlBase = 'http://apirecoleccion.gonzaloandreslucio.com/api';
+
+  private urlBase =  environmentApi.apiUrl;
 
   // UUID del perfil
-  readonly PERFIL_ID = '321d109f-6396-470a-b30a-ed347f8842c9';
+  readonly PERFIL_ID = environmentPerfilId.perfilId;
 
   constructor(private http: HttpClient, private auth: Auth, private firestore: Firestore) {}
   
@@ -173,6 +173,18 @@ export class ApiService {
       })
     );
   }
+
+
+  obtenerVehiculosDelChofer(choferId: string): Observable<RespuestaAPI<Vehiculo[]>> {
+  const vehiculosCollection = collection(this.firestore, 'vehiculos');
+  const q = query(vehiculosCollection, where('choferAsignado', '==', choferId));
+  
+  return from(getDocs(q)).pipe(
+    map((snapshot) => ({
+      data: snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Vehiculo)),
+    }))
+  );
+}
 
   // ==================== CALLES ====================
   obtenerCalles(): Observable<RespuestaAPI<Calle[]>> {

@@ -1,65 +1,136 @@
 import { Injectable } from '@angular/core';
-import { Auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from '@angular/fire/auth';
+import {
+  Auth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  user,
+} from '@angular/fire/auth';
 import { Router } from '@angular/router';
-import { Firestore, doc, setDoc } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, setDoc } from '@angular/fire/firestore';
+import { User } from 'firebase/auth';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { onAuthStateChanged } from '@angular/fire/auth';
 
 @Injectable({
-    providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
+  //  Observable para el rol del usuario
+  private rolUsuarioSubject = new BehaviorSubject<'admin' | 'chofer' | null>(null);
+  public rolUsuario$: Observable<'admin' | 'chofer' | null> = this.rolUsuarioSubject.asObservable();
 
-    constructor(private auth: Auth, private firestore: Firestore, private router: Router) { }
+  
 
-    // Función para registrar un nuevo usuario
-    async register({ email, password, nombre, apellidos }: any) {
-        try {
-            // 1. Creamos el usuario en el sistema de Autenticación de Firebase
-            const userCredential = await createUserWithEmailAndPassword(this.auth, email, password);
-            const user = userCredential.user;
+constructor(private auth: Auth, private firestore: Firestore, private router: Router) {
 
-            if (user) {
-                // 2. Si se crea el usuario, creamos un documento de perfil en Firestore
-                // Apuntamos a la colección 'usuarios' y usamos el UID del usuario como ID del documento
-                const userDocRef = doc(this.firestore, 'usuarios', user.uid);
-
-                // 3. Guardamos los datos del perfil
-                await setDoc(userDocRef, {
-                    uid: user.uid,
-                    email: user.email,
-                    nombre: nombre,
-                    apellidos: apellidos,
-                    rol: 'usuario' // Opcional: podemos asignar un rol por defecto
-                });
-
-                return user; // Devolvemos el usuario si todo fue exitoso
-            }
-            return null;
-
-        } catch (e) {
-            console.error("Error en el registro:", e);
-            return null;
-        }
+  // Detectar usuario cuando Firebase termina de cargarlo
+  onAuthStateChanged(this.auth, async (user) => {
+    if (user) {
+      const rol = await this.obtenerRolUsuario(user.uid);
+      this.rolUsuarioSubject.next(rol);
+    } else {
+      this.rolUsuarioSubject.next(null);
     }
+  });
+}
 
-    // Función para iniciar sesión
-    async login({ email, password }: any) {
-        try {
-            const user = await signInWithEmailAndPassword(this.auth, email, password);
-            return user;
-        } catch (e) {
-            return null;
-        }
-    }
 
-    // Función para cerrar sesión
-    async logout() {
-        try {
-            // Usamos la función signOut de Firebase
-            await signOut(this.auth);
-            // Después de cerrar sesión, redirigimos al usuario a la página de login
-            this.router.navigate(['/login']);
-        } catch (error) {
-            console.error("Error al cerrar sesión:", error);
-        }
+  private async cargarRolInicial() {
+    const user = this.auth.currentUser;
+    if (user) {
+      const rol = await this.obtenerRolUsuario(user.uid);
+      this.rolUsuarioSubject.next(rol);
     }
+  }
+
+  // Función para registrar un nuevo usuario
+  async register({ email, password, nombre, apellidos }: any) {
+    try {
+      // 1. Creamos el usuario en el sistema de Autenticación de Firebase
+      const userCredential = await createUserWithEmailAndPassword(this.auth, email, password);
+      const user = userCredential.user;
+
+      if (user) {
+        // 2. Si se crea el usuario, creamos un documento de perfil en Firestore
+        // Apuntamos a la colección 'usuarios' y usamos el UID del usuario como ID del documento
+        const userDocRef = doc(this.firestore, 'usuarios', user.uid);
+
+        // 3. Guardamos los datos del perfil
+        await setDoc(userDocRef, {
+          uid: user.uid,
+          email: user.email,
+          nombre: nombre,
+          apellidos: apellidos,
+          rol: 'chofer', // Por defecto, el nuevo usuario es un chofer
+        });
+
+        this.rolUsuarioSubject.next('chofer'); // Actualizamos el rol en el observable
+        return user; // Devolvemos el usuario si todo fue exitoso
+      }
+      return null;
+    } catch (e) {
+      console.error('Error en el registro:', e);
+      return null;
+    }
+  }
+
+  // Función para iniciar sesión
+  async login({ email, password }: any): Promise<User | null> {
+    try {
+      const userCredential = await signInWithEmailAndPassword(this.auth, email, password);
+      const user = userCredential.user; // ← PRIMERO guardamos el user
+
+      //  actualizamos el rol
+      if (user) {
+        const rol = await this.obtenerRolUsuario(user.uid);
+        this.rolUsuarioSubject.next(rol);
+      }
+
+      return user;
+    } catch (e) {
+      console.error('Error en login:', e);
+      return null;
+    }
+  }
+
+  // Función para cerrar sesión
+  async logout() {
+    try {
+      // Usamos la función signOut de Firebase
+      await signOut(this.auth);
+      this.rolUsuarioSubject.next(null); // Limpiamos el rol al cerrar sesión
+      // Después de cerrar sesión, redirigimos al usuario a la página de login
+      this.router.navigate(['/login']);
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  }
+
+  // ← NUEVO: Obtener rol del usuario desde Firestore
+  async obtenerRolUsuario(uid: string): Promise<'admin' | 'chofer' | null> {
+    try {
+      const userDocRef = doc(this.firestore, 'usuarios', uid);
+      const userSnap = await getDoc(userDocRef);
+
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        return userData['rol'] || 'chofer';
+      }
+      return null;
+    } catch (error) {
+      console.error('Error al obtener rol:', error);
+      return null;
+    }
+  }
+
+  // Getter para obtener el usuario actual
+  get currentUser() {
+    return this.auth.currentUser;
+  }
+
+  // Getter para obtener rol actual de forma síncrona
+  get rolActual(): 'admin' | 'chofer' | null {
+    return this.rolUsuarioSubject.value;
+  }
 }
