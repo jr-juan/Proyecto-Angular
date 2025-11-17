@@ -15,10 +15,7 @@ export class LoginComponent {
   email = '';
   password = '';
 
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) { }
+  constructor(private authService: AuthService, private router: Router) {}
 
   async iniciarSesion() {
     if (!this.email || !this.password) {
@@ -28,12 +25,22 @@ export class LoginComponent {
 
     const user = await this.authService.login({
       email: this.email,
-      password: this.password
+      password: this.password,
     });
 
     if (user) {
-      // Si el login es exitoso, navegamos al tablero
-      this.router.navigate(['/tablero']);
+      // Esperar un pequeño delay para asegurar que el rol se cargó
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      const rol = this.authService.rolActual;
+      
+      console.log('Rol que inicio sesion:', rol); 
+
+      if (rol === 'admin') {
+        this.router.navigate(['/tablero']);
+      } else {
+        this.router.navigate(['/chofer']);
+      }
     } else {
       alert('Error en el correo o la contraseña. Por favor, inténtalo de nuevo.');
     }
