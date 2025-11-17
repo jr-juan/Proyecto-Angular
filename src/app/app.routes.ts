@@ -1,9 +1,11 @@
 import { Routes } from '@angular/router';
 import { TableroComponent } from './semana7/paginas/tablero.component';
 import { VehiculosComponent } from './semana7/paginas/vehiculos.component';
-import { RutasMapaComponent } from './semana7/paginas/rutas.component';
+import { RutasComponent } from './semana7/paginas/rutas.component';
 import { LoginComponent } from './semana7/logica_componentes/login.logica';
 import { RegistroComponent } from './semana7/logica_componentes/registro.logica';
+import { ChoferComponent } from './semana7/paginas/chofer.component';
+import { AsignacionesComponent } from './semana7/paginas/asignaciones.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -11,6 +13,8 @@ export const routes: Routes = [
   { path: 'registro', component: RegistroComponent },
   { path: 'tablero', component: TableroComponent },
   { path: 'vehiculos', component: VehiculosComponent },
-  { path: 'rutas', component: RutasMapaComponent },
-  { path: '**', redirectTo: 'login' }
+  { path: 'rutas', component: RutasComponent },
+  { path: 'chofer', component: ChoferComponent },
+  { path: 'asignaciones', component: AsignacionesComponent },
+  { path: '**', redirectTo: 'login' },
 ];

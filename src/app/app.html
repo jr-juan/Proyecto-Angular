@@ -8,13 +8,25 @@
 
     <!-- Navegación -->
     <nav class="navegacion">
-      <a routerLink="/tablero" routerLinkActive="activo" class="nav-link"> Tablero </a>
-      <a routerLink="/vehiculos" routerLinkActive="activo" class="nav-link"> Vehículos </a>
-      <a routerLink="/rutas" routerLinkActive="activo" class="nav-link"> Rutas </a>
+      <!-- Mostrar SOLO si es ADMIN -->
+      @if (rolUsuario() === 'admin') {
+        <a routerLink="/tablero" routerLinkActive="activo" class="nav-link"> Tablero </a>
+        <a routerLink="/asignaciones" routerLinkActive="activo" class="nav-link"> Asignaciones </a> 
+        <a routerLink="/vehiculos" routerLinkActive="activo" class="nav-link"> Vehículos </a>
+        <a routerLink="/rutas" routerLinkActive="activo" class="nav-link"> Rutas </a>
+      }
 
-      <button (click)="cerrarSesion()" class="nav-link btn-logout">
-        Cerrar Sesión
-      </button>
+      <!-- Mostrar SOLO si es CHOFER -->
+      @if (rolUsuario() === 'chofer') {
+        <a routerLink="/chofer" routerLinkActive="activo" class="nav-link"> Mi Panel </a>
+      }
+
+      <!-- Botón cerrar sesión para ambos -->
+      @if (rolUsuario()) {
+        <button (click)="cerrarSesion()" class="nav-link btn-logout">
+          Cerrar Sesión
+        </button>
+      }
     </nav>
   </div>
 </header>
