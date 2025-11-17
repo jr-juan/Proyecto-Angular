@@ -3,40 +3,42 @@ import { isPlatformBrowser } from '@angular/common';
 import { ApiService } from '../servicios/api.service';
 import { ElementRef } from '@angular/core';
 import { Ruta, Calle } from '../modelos/interfaces';
-
-interface RespuestaAPI<T> {
-  data?: T;
-}
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class RutasMapaLogica {
-  // Propiedades privadas del mapa
-  private map: any;
-  private L: any; // Referencia a Leaflet
-  private drawnItems: any;
-  private drawControl?: any;
-  private lastDrawnLayer?: any;
-  private resizeObserver?: ResizeObserver;
-  private onWindowResize?: () => void;
+  private readonly MAPBOX_TOKEN = environment.mapboxToken;
 
-  // Estados públicos para el componente
-  public lastGeo?: GeoJSON.Geometry;
+  // Propiedades del mapa
+  private map?: mapboxgl.Map;
+  private markers: mapboxgl.Marker[] = [];
+  private currentLine: GeoJSON.Feature<GeoJSON.LineString> | null = null;
+  private puntosDibujados: [number, number][] = [];
+
+  // Estados públicos
   public rutas: Ruta[] = [];
   public calles: Calle[] = [];
   public loading = true;
   public saving = false;
+  public dibujandoRuta = false;
 
-  // Formulario de la ruta
+  // Formulario
   public newRutaName = '';
   public newRutaColor = '#ff0000';
 
-  // Referencias a elementos DOM
+  // Referencias DOM
   private mapElement!: HTMLElement;
-  private routeLayers: any[] = [];
-  private calleLayers: any[] = [];
   private isBrowser = false;
+
+  // Mensajes
+  mensajeExito = '';
+  mensajeError = '';
+
+  private colorAnterior = '#ff0000';
 
   constructor(
     private apiService: ApiService,
@@ -44,17 +46,22 @@ export class RutasMapaLogica {
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
+
+    // Configurar token de Mapbox
+    if (this.isBrowser) {
+      mapboxgl.accessToken = this.MAPBOX_TOKEN;
+    }
   }
 
   /**
-   * Establece el elemento DOM donde se renderizará el mapa.
+   * Establece el elemento DOM donde se renderizará el mapa
    */
   setMapElement(mapRef: ElementRef<HTMLDivElement>) {
     this.mapElement = mapRef.nativeElement;
   }
 
   /**
-   * Inicializa el mapa y los datos si estamos en el navegador.
+   * Inicializa el mapa
    */
   public async inicializar() {
     if (!this.isBrowser) {
@@ -62,449 +69,445 @@ export class RutasMapaLogica {
       return;
     }
 
-    // Importar Leaflet dinámicamente
-    try {
-      this.L = (await import('leaflet')).default;
-      await import('leaflet-draw');
-    } catch (error) {
-      console.error('Error cargando Leaflet:', error);
-      this.loading = false;
+    // esto para desactivar telemetría
+    (mapboxgl as any).prewarm();
+
+    this.ngZone.runOutsideAngular(() => {
+      try {
+        this.map = new mapboxgl.Map({
+          container: this.mapElement,
+          style: 'mapbox://styles/mapbox/streets-v12',
+          center: [-77.0312, 3.8801],
+          zoom: 13,
+          attributionControl: false,
+          collectResourceTiming: false, // Desactiva telemetría
+          trackResize: false, // Mejora rendimiento en algunos casos
+          fadeDuration: 0, // Desactiva animaciones de fundido
+          crossSourceCollisions: false, // Mejora rendimiento al evitar colisiones entre fuentes
+        });
+
+        // Desactivar eventos de telemetría
+        this.map.on('load', () => {
+          // Remover event listeners de telemetría
+          (this.map as any)._collectResourceTiming = false;
+
+          this.ngZone.run(() => {
+            this.loading = false;
+            this.cargarRutas();
+            this.cargarCalles();
+          });
+        });
+
+        // Agregar controles de navegación (zoom +/-)
+        this.map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+        // Agregar control de geolocalización
+        this.map.addControl(
+          new mapboxgl.GeolocateControl({
+            positionOptions: { enableHighAccuracy: true },
+            trackUserLocation: true,
+            showUserHeading: true,
+          }),
+          'top-right'
+        );
+
+        // Cuando el mapa esté listo
+        this.map.on('load', () => {
+          this.ngZone.run(() => {
+            this.loading = false;
+            this.cargarRutas();
+            this.cargarCalles();
+          });
+        });
+
+        // Click en el mapa para dibujar rutas
+        this.map.on('click', (e) => {
+          if (this.dibujandoRuta) {
+            this.agregarPuntoARuta(e.lngLat.lng, e.lngLat.lat);
+          }
+        });
+      } catch (error) {
+        this.ngZone.run(() => {
+          console.error('Error inicializando Mapbox:', error);
+          this.loading = false;
+        });
+      }
+    });
+  }
+
+  // ==================== DIBUJAR RUTAS ====================
+
+  /**
+   * Inicia el modo de dibujo de ruta
+   */
+  public iniciarDibujoRuta() {
+    this.dibujandoRuta = true;
+    this.puntosDibujados = [];
+    this.limpiarMarcadores();
+    this.newRutaName = '';
+    this.newRutaColor = '#ff0000';
+  }
+
+  /**
+   * Agrega un punto a la ruta que se está dibujando
+   */
+  private agregarPuntoARuta(lng: number, lat: number) {
+    if (!this.map) return;
+
+    // Agregar punto al array
+    this.puntosDibujados.push([lng, lat]);
+
+    // Crear marcador visual
+    const marker = new mapboxgl.Marker({ color: this.newRutaColor })
+      .setLngLat([lng, lat])
+      .addTo(this.map);
+
+    this.markers.push(marker);
+
+    // Si hay al menos 2 puntos, dibujar la línea
+    if (this.puntosDibujados.length >= 2) {
+      this.dibujarLineaTemporal();
+    }
+  }
+
+  /**
+   * Dibuja la línea temporal mientras se está creando la ruta
+   */
+  private dibujarLineaTemporal() {
+    if (!this.map) return;
+
+    const sourceId = 'ruta-temporal';
+    const layerId = 'ruta-temporal-layer';
+
+    // Remover capa y fuente anterior si existe
+    if (this.map.getLayer(layerId)) {
+      this.map.removeLayer(layerId);
+    }
+    if (this.map.getSource(sourceId)) {
+      this.map.removeSource(sourceId);
+    }
+
+    // Crear GeoJSON de la línea
+    const lineGeoJSON: GeoJSON.Feature<GeoJSON.LineString> = {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'LineString',
+        coordinates: this.puntosDibujados,
+      },
+    };
+
+    // Agregar fuente y capa
+    this.map.addSource(sourceId, {
+      type: 'geojson',
+      data: lineGeoJSON,
+    });
+
+    this.map.addLayer({
+      id: layerId,
+      type: 'line',
+      source: sourceId,
+      layout: {
+        'line-join': 'round',
+        'line-cap': 'round',
+      },
+      paint: {
+        'line-color': this.newRutaColor,
+        'line-width': 4,
+      },
+    });
+
+    this.currentLine = lineGeoJSON;
+  }
+
+  /**
+   * Cancela el dibujo actual
+   */
+  public cancelarDibujo() {
+    this.dibujandoRuta = false;
+    this.puntosDibujados = [];
+    this.currentLine = null;
+    this.limpiarMarcadores();
+
+    // Remover capa temporal
+    if (this.map) {
+      const sourceId = 'ruta-temporal';
+      const layerId = 'ruta-temporal-layer';
+
+      if (this.map.getLayer(layerId)) {
+        this.map.removeLayer(layerId);
+      }
+      if (this.map.getSource(sourceId)) {
+        this.map.removeSource(sourceId);
+      }
+    }
+  }
+
+  // Método para actualizar color de elementos ya dibujados
+  public actualizarColorDibujo() {
+    if (!this.dibujandoRuta) return;
+
+    // Actualizar color de marcadores existentes
+    this.markers.forEach((marker) => {
+      // Recrear el marcador con el nuevo color
+      const lngLat = marker.getLngLat();
+      marker.remove();
+
+      const nuevoMarker = new mapboxgl.Marker({ color: this.newRutaColor })
+        .setLngLat(lngLat)
+        .addTo(this.map!);
+
+      // Actualizar en el array
+      const index = this.markers.indexOf(marker);
+      this.markers[index] = nuevoMarker;
+    });
+
+    // Redibujar línea temporal con nuevo color
+    if (this.puntosDibujados.length >= 2) {
+      this.dibujarLineaTemporal();
+    }
+  }
+
+  // Método para limpiar mensajes
+  limpiarMensaje(tipo: 'error' | 'exito' | 'ninguno' = 'ninguno') {
+    if (tipo === 'error' || tipo === 'ninguno') this.mensajeError = '';
+    if (tipo === 'exito' || tipo === 'ninguno') this.mensajeExito = '';
+  }
+
+  /**
+   * Guarda la ruta dibujada
+   */
+
+  public guardarRuta() {
+    this.limpiarMensaje();
+
+    if (!this.currentLine || this.puntosDibujados.length < 2) {
+      this.mensajeError = 'Debes dibujar al menos 2 puntos para crear una ruta';
       return;
     }
 
-    const container = this.mapElement;
-    if (container.clientWidth > 0 && container.clientHeight > 0) {
-      this.inicializarMapa();
-    } else {
-      this.resizeObserver = new ResizeObserver(() => {
-        if (container.clientWidth > 0 && container.clientHeight > 0) {
-          this.resizeObserver?.disconnect();
-          this.inicializarMapa();
-        }
-      });
-      this.resizeObserver.observe(container);
+    if (!this.newRutaName.trim()) {
+      this.mensajeError = 'Debes dar un nombre a la ruta';
+      return;
     }
-  }
 
-  /**
-   * Realiza la inicialización real de Leaflet y carga los datos.
-   */
-  private inicializarMapa() {
-    this.ngZone.runOutsideAngular(() => {
-      // Limpiar si ya existe
-      if (this.map) {
-        try {
-          this.map.remove();
-        } catch {}
-      }
+    this.saving = true;
 
-      this.map = this.L.map(this.mapElement, {
-        preferCanvas: true,
-        zoomControl: true,
-        minZoom: 3,
-        maxZoom: 19,
-      });
-
-      this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19,
-      }).addTo(this.map);
-
-      // FeatureGroup para elementos dibujados por el usuario
-      this.drawnItems = new this.L.FeatureGroup().addTo(this.map);
-
-      // Control de dibujo (leaflet-draw)
-      this.setupDrawControls();
-
-      this.map.whenReady(() => this.map.invalidateSize());
-
-      // Cargar datos
-      this.cargarRutasDesdeServicio();
-      this.cargarCalles();
-
-      // Geolocalización
-      this.configurarUbicacionInicial();
-
-      // Configurar redimensionamiento
-      this.resizeObserver = new ResizeObserver(() => {
-        if (this.map) this.map.invalidateSize();
-      });
-      this.resizeObserver.observe(this.mapElement);
-
-      this.onWindowResize = () => {
-        if (this.map) this.map.invalidateSize();
-      };
-      window.addEventListener('resize', this.onWindowResize);
-    });
-  }
-
-  /**
-   * Configura los controles de dibujo y sus eventos.
-   */
-  private setupDrawControls() {
-    const drawOptions = {
-      draw: {
-        polyline: { shapeOptions: { color: this.newRutaColor, weight: 4 } },
-        polygon: false,
-        rectangle: false,
-        circle: false,
-        marker: false,
-        circlemarker: false,
-      },
-      edit: { featureGroup: this.drawnItems, remove: true },
+    const nuevaRuta: Ruta = {
+      id: '',
+      perfil_id: this.apiService.PERFIL_ID,
+      nombre_ruta: this.newRutaName,
+      color_hex: this.newRutaColor,
+      shape: JSON.stringify(this.currentLine.geometry),
     };
 
-    this.drawControl = new (this.L.Control as any).Draw(drawOptions);
-    this.map.addControl(this.drawControl);
+    this.apiService.crearRuta(nuevaRuta).subscribe({
+      next: (res) => {
+        this.mensajeExito = `Ruta "${this.newRutaName}" guardada exitosamente ✓`;
+        this.saving = false;
+        this.cancelarDibujo();
+        this.cargarRutas();
 
-    // Eventos draw:created
-    this.map.on('draw:created', (e: any) => {
-      this.ngZone.run(() => {
-        const layer = e.layer;
-        // Eliminar dibujo previo si existe
-        if (this.lastDrawnLayer) {
-          try {
-            this.drawnItems.removeLayer(this.lastDrawnLayer);
-          } catch {}
-        }
-        this.drawnItems.addLayer(layer);
-        this.lastDrawnLayer = layer;
-        const geo = layer.toGeoJSON().geometry;
-        this.lastGeo = geo;
-      });
-    });
-
-    // Eventos draw:deleted
-    this.map.on('draw:deleted', (e: any) => {
-      this.ngZone.run(() => {
-        this.lastDrawnLayer = undefined;
-        this.lastGeo = undefined;
-      });
+        // Limpiar mensaje después de 5 segundos
+        setTimeout(() => this.limpiarMensaje('exito'), 5000);
+      },
+      error: (err) => {
+        this.mensajeError = 'Error al guardar la ruta. Intenta de nuevo.';
+        this.saving = false;
+        console.error('Error guardando ruta:', err);
+      },
     });
   }
-
-  private configurarUbicacionInicial() {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          this.map.setView([pos.coords.latitude, pos.coords.longitude], 14);
-          this.L.marker([pos.coords.latitude, pos.coords.longitude])
-            .addTo(this.map)
-            .bindPopup('Tu ubicación actual');
-          this.dibujarRutas();
-          this.dibujarCalles();
-          this.forzarRedraw();
-        },
-        () => {
-          this.map.setView([3.8777, -77.0276], 13);
-          this.dibujarRutas();
-          this.dibujarCalles();
-          this.forzarRedraw();
-        },
-        { enableHighAccuracy: false, timeout: 5000 }
-      );
-    } else {
-      this.map.setView([3.8777, -77.0276], 13);
-      this.dibujarRutas();
-      this.dibujarCalles();
-      this.forzarRedraw();
-    }
+  /**
+   * Limpia los marcadores del mapa
+   */
+  private limpiarMarcadores() {
+    this.markers.forEach((marker) => marker.remove());
+    this.markers = [];
   }
 
-  // ==================== LÓGICA DE DATOS ====================
+  // ==================== CARGAR DATOS ====================
 
-  private cargarRutasDesdeServicio() {
+  /**
+   * Carga las rutas desde la API y las dibuja
+   */
+  private cargarRutas() {
     this.loading = true;
     this.apiService.obtenerRutasPorPerfil(this.apiService.PERFIL_ID).subscribe({
       next: (res: any) => {
-        this.ngZone.run(() => {
-          this.rutas = (res.data || res || []).map((r: any) => {
-            let color = r.color_hex;
-
-            // Si backend no devuelve color, buscar en localStorage
-            if (!color && this.isBrowser) {
-              const key = `ruta-color-${r.nombre_ruta}`;
-              color = localStorage.getItem(key) || '#ff0000';
-            }
-
-            return { ...r, color_hex: color || '#ff0000' };
-          }) as Ruta[];
-
-          this.loading = false;
-          if (this.map) this.dibujarRutas();
-        });
+        this.rutas = res.data || res || [];
+        this.dibujarRutasGuardadas();
+        this.loading = false;
       },
       error: (err) => {
-        this.ngZone.run(() => {
-          console.error('Error al cargar rutas:', err);
-          this.loading = false;
-        });
+        console.error('Error cargando rutas:', err);
+        this.loading = false;
       },
     });
   }
 
+  /**
+   * Dibuja todas las rutas guardadas en el mapa
+   */
+  private dibujarRutasGuardadas() {
+    if (!this.map) return;
+
+    this.rutas.forEach((ruta) => {
+      // ✅ Validar que shape exista antes de parsear
+      if (!ruta.shape) {
+        console.warn('Ruta sin geometría:', ruta.nombre_ruta);
+        return;
+      }
+
+      try {
+        const geometry = JSON.parse(ruta.shape); // Ahora TypeScript sabe que no es undefined
+        const sourceId = `ruta-${ruta.id}`;
+        const layerId = `ruta-layer-${ruta.id}`;
+
+        // Verificar si ya existe la fuente
+        if (this.map!.getSource(sourceId)) {
+          return;
+        }
+
+        this.map!.addSource(sourceId, {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            properties: { nombre: ruta.nombre_ruta },
+            geometry: geometry,
+          },
+        });
+
+        this.map!.addLayer({
+          id: layerId,
+          type: 'line',
+          source: sourceId,
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round',
+          },
+          paint: {
+            'line-color': ruta.color_hex || '#ff0000',
+            'line-width': 4,
+          },
+        });
+
+        // Agregar popup al hacer click
+        this.map!.on('click', layerId, () => {
+          new mapboxgl.Popup()
+            .setLngLat(geometry.coordinates[0])
+            .setHTML(`<strong>${ruta.nombre_ruta}</strong>`)
+            .addTo(this.map!);
+        });
+
+        // Cambiar cursor
+        this.map!.on('mouseenter', layerId, () => {
+          this.map!.getCanvas().style.cursor = 'pointer';
+        });
+
+        this.map!.on('mouseleave', layerId, () => {
+          this.map!.getCanvas().style.cursor = '';
+        });
+      } catch (e) {
+        console.error('Error dibujando ruta:', ruta.nombre_ruta, e);
+      }
+    });
+  }
+
+  /**
+   * Carga las calles desde la API
+   */
   private cargarCalles() {
     this.apiService.obtenerCalles().subscribe({
       next: (res: any) => {
-        this.ngZone.run(() => {
-          this.calles = res.data || [];
-          if (this.map) this.dibujarCalles();
-        });
+        this.calles = res.data || [];
+        this.dibujarCalles();
       },
       error: (err) => {
-        this.ngZone.run(() => {
-          console.error('Error al cargar calles:', err);
-        });
+        console.error('Error cargando calles:', err);
       },
     });
   }
 
   /**
-   * Guarda la ruta trazada por el usuario.
+   * Dibuja las calles en el mapa
    */
-  public saveDrawnRuta() {
-    if (!this.lastGeo) return;
-
-    this.ngZone.run(() => {
-      const payload: Ruta = {
-        id: '',
-        perfil_id: this.apiService.PERFIL_ID,
-        nombre_ruta: this.newRutaName || 'Ruta sin nombre',
-        color_hex: this.colorOrDefault(this.newRutaColor),
-        shape: JSON.stringify(this.lastGeo),
-      };
-
-      console.log('Payload a enviar:', payload);
-
-      this.saving = true;
-      this.apiService.crearRuta(payload).subscribe({
-        next: (saved: any) => {
-          this.saving = false;
-          const added = saved || {};
-          const finalRuta: Ruta = {
-            id: added.id || Date.now().toString(),
-            perfil_id: added.perfil_id || payload.perfil_id,
-            nombre_ruta: added.nombre_ruta || payload.nombre_ruta,
-            color_hex: payload.color_hex,
-            shape:
-              typeof added.shape === 'string'
-                ? added.shape
-                : JSON.stringify(added.shape || payload.shape),
-          };
-
-          // Guardar color en localStorage
-          if (this.isBrowser) {
-            const key = `ruta-color-${finalRuta.nombre_ruta}`;
-            localStorage.setItem(key, payload.color_hex ?? '#ff0000');
-          }
-
-          this.rutas.push(finalRuta);
-          this.dibujarRutas();
-          this.clearDraw();
-        },
-        error: (err) => {
-          this.saving = false;
-          console.error('Error guardando ruta:', err);
-        },
-      });
-    });
-  }
-
-  /**
-   * Limpia el trazado actual y reinicia el formulario.
-   */
-  public clearDraw() {
-    this.ngZone.run(() => {
-      if (this.lastDrawnLayer && this.drawnItems) {
-        try {
-          this.drawnItems.removeLayer(this.lastDrawnLayer);
-        } catch {}
-      }
-      this.lastDrawnLayer = undefined;
-      this.lastGeo = undefined;
-      this.newRutaName = '';
-    });
-  }
-
-  public cancelDraw() {
-    this.clearDraw();
-  }
-
-  // ==================== LÓGICA DE DIBUJO ====================
-
-  private dibujarRutas() {
-    if (!this.map || !this.L) return;
-
-    this.routeLayers.forEach((l) => {
-      try {
-        this.map.removeLayer(l);
-      } catch {}
-    });
-    this.routeLayers = [];
-
-    this.rutas.forEach((r) => {
-      if (!r.shape) return;
-      try {
-        const geoObj = this.parseShape(r.shape);
-        if (!geoObj) {
-          console.warn('dibujarRutas: shape no parseable para ruta', r.id, r.shape);
-          return;
-        }
-
-        let featureToRender: any;
-        if (geoObj.type === 'Feature' || geoObj.type === 'FeatureCollection') {
-          featureToRender = geoObj;
-        } else if (geoObj.type && geoObj.coordinates) {
-          featureToRender = { type: 'Feature', properties: {}, geometry: geoObj };
-        } else {
-          console.warn('dibujarRutas: GeoJSON con formato inesperado', r.id, geoObj);
-          return;
-        }
-
-        const color = this.colorOrDefault(r.color_hex || '#ff0000');
-        const layer = this.L.geoJSON(featureToRender, {
-          style: { color, weight: 4, opacity: 0.85 },
-        }).addTo(this.map);
-
-        this.routeLayers.push(layer);
-      } catch (e) {
-        console.error('GeoJSON inválido en ruta', r.id, e, 'raw shape:', r.shape);
-      }
-    });
-
-    const allLayers = this.routeLayers.concat(this.calleLayers);
-    if (allLayers.length) {
-      const group = this.L.featureGroup(allLayers);
-      try {
-        if (group.getBounds().isValid()) {
-          this.map.fitBounds(group.getBounds(), { padding: [20, 20] });
-        }
-      } catch (e) {
-        console.warn('fitBounds falló', e);
-      }
-      setTimeout(() => this.map.invalidateSize(), 200);
-    }
-    this.forzarRedraw();
-  }
-
   private dibujarCalles() {
-    if (!this.map || !this.L) return;
+    if (!this.map) return;
 
-    this.calleLayers.forEach((l) => {
+    this.calles.forEach((calle, index) => {
       try {
-        this.map.removeLayer(l);
-      } catch {}
-    });
-    this.calleLayers = [];
+        const geometry = JSON.parse(calle.shape);
+        const sourceId = `calle-${calle.id}`;
+        const layerId = `calle-layer-${calle.id}`;
 
-    this.calles.forEach((c) => {
-      if (!c.shape) return;
-      try {
-        const geo = JSON.parse(c.shape);
-        const layer = this.L.geoJSON(geo, {
-          style: { color: '#666', weight: 2, opacity: 0.6, dashArray: '4 6' },
-        }).addTo(this.map);
-        this.calleLayers.push(layer);
-      } catch (e) {
-        console.error('GeoJSON inválido en calle', c.id, e);
-      }
-    });
-  }
-
-  public zoomToRuta(ruta: Ruta) {
-    if (!ruta.shape || !this.map || !this.L) return;
-
-    try {
-      const geoObj = this.parseShape(ruta.shape);
-      if (!geoObj) {
-        console.warn('zoomToRuta: shape no parseable', ruta.id, ruta.shape);
-        return;
-      }
-
-      let featureToZoom: any;
-      if (geoObj.type === 'Feature' || geoObj.type === 'FeatureCollection') {
-        featureToZoom = geoObj;
-      } else if (geoObj.type && geoObj.coordinates) {
-        featureToZoom = { type: 'Feature', properties: {}, geometry: geoObj };
-      } else {
-        console.warn('zoomToRuta: formato GeoJSON inesperado', ruta.id, geoObj);
-        return;
-      }
-
-      const layer = this.L.geoJSON(featureToZoom);
-      const bounds = (layer as any).getBounds();
-      if (!bounds || !bounds.isValid()) {
-        console.warn('zoomToRuta: bounds inválidos para ruta', ruta.id);
-        return;
-      }
-      this.map.fitBounds(bounds, { padding: [20, 20] });
-      this.forzarRedraw();
-    } catch (e) {
-      console.error('Error haciendo zoom a ruta', e, 'raw shape:', ruta.shape);
-    }
-  }
-
-  public zoomToCalle(calle: Calle) {
-    if (!calle.shape || !this.map || !this.L) return;
-
-    try {
-      const geo = JSON.parse(calle.shape);
-      const layer = this.L.geoJSON(geo);
-      this.map.fitBounds(layer.getBounds(), { padding: [20, 20] });
-      this.forzarRedraw();
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  // ==================== HELPERS ====================
-
-  private parseShape(shape?: string | null): any | null {
-    if (!shape) return null;
-    try {
-      let obj: any = shape;
-      if (typeof obj === 'string') {
-        obj = JSON.parse(obj);
-        if (typeof obj === 'string') {
-          obj = JSON.parse(obj);
+        if (this.map!.getSource(sourceId)) {
+          return;
         }
+
+        this.map!.addSource(sourceId, {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            properties: { nombre: calle.nombre },
+            geometry: geometry,
+          },
+        });
+
+        this.map!.addLayer({
+          id: layerId,
+          type: 'line',
+          source: sourceId,
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round',
+          },
+          paint: {
+            'line-color': '#999',
+            'line-width': 2,
+            'line-dasharray': [2, 2],
+          },
+        });
+      } catch (e) {
+        console.error('Error dibujando calle:', e);
       }
-      if (obj && typeof obj === 'object' && obj.type) {
-        return obj;
-      }
-      return null;
-    } catch (e) {
-      console.warn('parseShape: error parsing shape', e, 'raw:', shape);
-      return null;
-    }
-  }
-
-  private colorOrDefault(c?: string): string {
-    return c && /^#[0-9A-Fa-f]{6}$/.test(c) ? c : '#ff0000';
-  }
-
-  private forzarRedraw() {
-    if (!this.map || !this.isBrowser) return;
-
-    requestAnimationFrame(() => this.map.invalidateSize());
-    setTimeout(() => this.map.invalidateSize(), 120);
-    setTimeout(() => this.map.invalidateSize(), 400);
+    });
   }
 
   /**
-   * Limpia y destruye el mapa y los observadores al destruir el componente.
+   * Hace zoom a una ruta específica
+   */
+  public zoomToRuta(ruta: Ruta) {
+    if (!this.map || !ruta.shape) {
+      console.warn('No se puede hacer zoom: mapa no inicializado o ruta sin geometría');
+      return;
+    }
+
+    try {
+      const geometry = JSON.parse(ruta.shape);
+      const coordinates = geometry.coordinates;
+
+      // Crear bounds para la ruta
+      const bounds = coordinates.reduce(
+        (bounds: mapboxgl.LngLatBounds, coord: [number, number]) => {
+          return bounds.extend(coord as [number, number]);
+        },
+        new mapboxgl.LngLatBounds(coordinates[0], coordinates[0])
+      );
+
+      this.map.fitBounds(bounds, { padding: 50 });
+    } catch (e) {
+      console.error('Error haciendo zoom a ruta:', e);
+    }
+  }
+
+  /**
+   * Limpia el mapa al destruir el componente
    */
   public limpiar() {
-    if (!this.isBrowser) return;
-
-    if (this.onWindowResize) {
-      window.removeEventListener('resize', this.onWindowResize);
-    }
-    this.resizeObserver?.disconnect();
     if (this.map) {
-      try {
-        this.map.remove();
-      } catch {}
+      this.limpiarMarcadores();
+      this.map.remove();
     }
   }
 }
