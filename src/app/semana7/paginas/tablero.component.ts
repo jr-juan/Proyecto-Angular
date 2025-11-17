@@ -17,7 +17,7 @@ import { TableroLogica } from '../logica_componentes/tablero';
       <!-- Tarjetas de estadísticas -->
       <div class="estadisticas">
         <div class="tarjeta-stat">
-          <div class="icono-stat">Vehiculos</div>
+          <div class="icono-stat">Vehículos</div>
           <div class="info-stat">
             <h3>{{ logica.vehiculos.length }}</h3>
             <p>Vehículos Totales</p>
