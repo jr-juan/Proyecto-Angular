@@ -501,6 +501,37 @@ export class RutasMapaLogica {
     }
   }
 
+  public confirmarEliminarRuta(ruta: Ruta) {
+    // Si la ruta no tiene ID, cancelamos todo para evitar el error.
+    if (!ruta.id) {
+      console.error('Error: Intentando eliminar una ruta sin ID');
+      this.mensajeError = 'No se puede eliminar la ruta (ID no válido).';
+      return;
+    }
+
+    const confirmacion = confirm(`¿Estás seguro de que quieres eliminar la ruta "${ruta.nombre_ruta}"?`);
+
+    if (confirmacion) {
+      this.loading = true;
+
+      this.apiService.eliminarRuta(ruta.id).subscribe({
+        next: () => {
+          this.mensajeExito = `Ruta "${ruta.nombre_ruta}" eliminada correctamente.`;
+          this.loading = false;
+          this.cargarRutas();
+          this.limpiarMarcadores();
+
+          // Limpiar el mensaje de éxito después de 3 segundos
+          setTimeout(() => this.limpiarMensaje('exito'), 3000);
+        },
+        error: (err) => {
+          console.error('Error eliminando ruta:', err);
+          this.mensajeError = 'No se pudo eliminar la ruta.';
+          this.loading = false;
+        }
+      });
+    }
+  }
   /**
    * Limpia el mapa al destruir el componente
    */

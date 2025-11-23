@@ -108,7 +108,7 @@ import { AsignacionesLogica } from '../logica_componentes/asignaciones';
       </div>
 
       <!-- Modal de Asignación -->
-    <!--  @if (logica.mostrarModal) {
+    @if (logica.mostrarModal) {
         <div class="modal-overlay" (click)="logica.cerrarModal()">
           <div class="modal-contenido" (click)="$event.stopPropagation()">
             <div class="modal-header">
@@ -157,12 +157,12 @@ import { AsignacionesLogica } from '../logica_componentes/asignaciones';
             </div>
           </div>
         </div>
-      } -->
+      }
     </div>
   `,
 })
 export class AsignacionesComponent implements OnInit {
-  constructor(public logica: AsignacionesLogica) {}
+  constructor(public logica: AsignacionesLogica) { }
 
   ngOnInit() {
     this.logica.inicializar();

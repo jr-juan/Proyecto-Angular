@@ -144,17 +144,29 @@ import { RutasMapaLogica } from '../logica_componentes/rutas';
         @if (logica.rutas.length > 0) {
         <div class="grid-rutas">
           @for (ruta of logica.rutas; track ruta.id) {
-          <div class="tarjeta-ruta" (click)="logica.zoomToRuta(ruta)">
-            <div class="ruta-color-bar" [style.background]="ruta.color_hex"></div>
-            <div class="ruta-contenido">
+        <div class="tarjeta-ruta" (click)="logica.zoomToRuta(ruta)">
+          <div class="ruta-color-bar" [style.background]="ruta.color_hex"></div>
+          <div class="ruta-contenido">
+            <div class="ruta-header-card"> 
               <h4>{{ ruta.nombre_ruta }}</h4>
-              <p class="ruta-meta">
-                <span class="icono">📍</span>
-                <span class="ruta-id">ID: {{ ruta.id }}</span>
-              </p>
-              <button class="btn-ver-ruta">Ver en mapa →</button>
+              
+
+              <button 
+                class="btn-eliminar-ruta" 
+                (click)="logica.confirmarEliminarRuta(ruta); $event.stopPropagation()"
+                title="Eliminar Ruta"
+              >
+                🗑️
+              </button>
             </div>
+
+            <p class="ruta-meta">
+              <span class="icono">📍</span>
+              <span class="ruta-id">ID: {{ ruta.id }}</span>
+            </p>
+            <button class="btn-ver-ruta">Ver en mapa →</button>
           </div>
+        </div>
           }
         </div>
         } @else {
@@ -171,7 +183,7 @@ import { RutasMapaLogica } from '../logica_componentes/rutas';
 export class RutasComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef<HTMLDivElement>;
 
-  constructor(public logica: RutasMapaLogica) {}
+  constructor(public logica: RutasMapaLogica) { }
 
   ngOnInit(): void {
     // Componente inicializado

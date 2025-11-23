@@ -24,6 +24,7 @@ export interface Vehiculo {
   marca: string | null; 
   modelo: string | null; 
   activo: boolean;
+  choferAsignado?: string | null; 
 }
 
 export interface Calle {

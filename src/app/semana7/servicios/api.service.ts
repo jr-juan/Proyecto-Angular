@@ -23,29 +23,90 @@ import { Ruta, CrearRuta, Vehiculo, Calle, RespuestaAPI } from '../modelos/inter
 })
 export class ApiService {
 
-  private urlBase =  environmentApi.apiUrl;
+  private urlBase = environmentApi.apiUrl;
 
   // UUID del perfil
   readonly PERFIL_ID = environmentPerfilId.perfilId;
 
-  constructor(private http: HttpClient, private auth: Auth, private firestore: Firestore) {}
-  
+  constructor(private http: HttpClient, private auth: Auth, private firestore: Firestore) { }
+
   // ==================== RUTAS ====================
   obtenerRutasPorPerfil(perfilId: string): Observable<RespuestaAPI<Ruta[]>> {
-    return this.http.get<RespuestaAPI<Ruta[]>>(`${this.urlBase}/rutas?perfil_id=${perfilId}`);
-  }
+    const user = this.auth.currentUser;
+    if (!user) {
+      return of({ data: [] });
+    }
 
-  obtenerRutaPorId(rutaId: string): Observable<RespuestaAPI<Ruta>> {
-    return this.http.get<RespuestaAPI<Ruta>>(`${this.urlBase}/rutas/${rutaId}`);
+    const rutasCollection = collection(this.firestore, 'rutas');
+    const q = query(rutasCollection, where('userId', '==', user.uid));
+
+    return from(getDocs(q)).pipe(
+      map((snapshot) => ({
+        data: snapshot.docs.map((doc) => {
+          // CORRECCIÓN AQUÍ:
+          // 1. Primero esparcimos los datos (...doc.data())
+          // 2. LUEGO asignamos el id real (id: doc.id)
+          // Esto asegura que el ID real de Firestore sobreescriba cualquier "id" vacío que venga en los datos.
+          return { ...doc.data(), id: doc.id } as Ruta;
+        }),
+      }))
+    );
+  }
+  obtenerRutaPorId(idFirestore: string): Observable<RespuestaAPI<Ruta>> {
+    const user = this.auth.currentUser;
+    if (!user) return throwError(() => new Error('Usuario no autenticado'));
+
+    const docRef = doc(this.firestore, 'rutas', idFirestore);
+    return from(getDoc(docRef)).pipe(
+      map(docSnap => {
+        if (docSnap.exists() && docSnap.data()['userId'] === user.uid) {
+          return { data: { id: docSnap.id, ...docSnap.data() } as Ruta };
+        }
+        throw new Error('Ruta no encontrada');
+      })
+    );
   }
 
   crearRuta(ruta: CrearRuta): Observable<any> {
+    const user = this.auth.currentUser;
+    if (!user) return throwError(() => new Error('Usuario no autenticado'));
+
     const { perfil_id, ...rutaSinPerfil } = ruta;
-    return this.http.post<any>(`${this.urlBase}/rutas?perfil_id=${this.PERFIL_ID}`, rutaSinPerfil);
+
+    const { id, ...rutaLimpia } = rutaSinPerfil as any;
+
+    return this.http.post<any>(`${this.urlBase}/rutas?perfil_id=${this.PERFIL_ID}`, rutaSinPerfil).pipe(
+      switchMap((respuestaLucio) => {
+
+        const idReal = respuestaLucio.data?.id;
+
+        const rutasCollection = collection(this.firestore, 'rutas');
+        const rutaParaFirestore = {
+          ...rutaLimpia, // Usamos la ruta limpia sin el campo 'id' vacío
+          idApiLucio: idReal,
+          userId: user.uid
+        };
+        return from(addDoc(rutasCollection, rutaParaFirestore));
+      })
+    );
   }
 
-  eliminarRuta(rutaId: string): Observable<void> {
-    return this.http.delete<void>(`${this.urlBase}/rutas/${rutaId}`);
+  eliminarRuta(idFirestore: string): Observable<void> {
+    const user = this.auth.currentUser;
+    if (!user) return throwError(() => new Error('Usuario no autenticado'));
+
+    const docRef = doc(this.firestore, 'rutas', idFirestore);
+
+    // Verificamos que la ruta pertenezca al usuario antes de borrar
+    return from(getDoc(docRef)).pipe(
+      switchMap(docSnap => {
+        if (docSnap.exists() && docSnap.data()['userId'] === user.uid) {
+          // Solo borramos de Firestore.
+          return from(deleteDoc(docRef));
+        }
+        throw new Error('No tienes permiso para eliminar esta ruta');
+      })
+    );
   }
 
   // ==================== VEHÍCULOS  ====================
@@ -176,15 +237,15 @@ export class ApiService {
 
 
   obtenerVehiculosDelChofer(choferId: string): Observable<RespuestaAPI<Vehiculo[]>> {
-  const vehiculosCollection = collection(this.firestore, 'vehiculos');
-  const q = query(vehiculosCollection, where('choferAsignado', '==', choferId));
-  
-  return from(getDocs(q)).pipe(
-    map((snapshot) => ({
-      data: snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Vehiculo)),
-    }))
-  );
-}
+    const vehiculosCollection = collection(this.firestore, 'vehiculos');
+    const q = query(vehiculosCollection, where('choferAsignado', '==', choferId));
+
+    return from(getDocs(q)).pipe(
+      map((snapshot) => ({
+        data: snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Vehiculo)),
+      }))
+    );
+  }
 
   // ==================== CALLES ====================
   obtenerCalles(): Observable<RespuestaAPI<Calle[]>> {

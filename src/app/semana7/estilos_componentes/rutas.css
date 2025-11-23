@@ -208,6 +208,35 @@
   cursor: not-allowed;
 }
 
+.ruta-header-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 5px;
+}
+
+.ruta-header-card h4 {
+  margin: 0;
+  flex: 1; 
+}
+
+.btn-eliminar-ruta {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  opacity: 0.6;
+}
+
+.btn-eliminar-ruta:hover {
+  background-color: #fee2e2; 
+  opacity: 1;
+  transform: scale(1.1);
+}
+
 /* ===== MAPA ===== */
 .mapa-wrapper {
   position: relative;

@@ -35,7 +35,7 @@ export class AsignacionesLogica {
   constructor(
     private apiService: ApiService,
     private firestore: Firestore
-  ) {}
+  ) { }
 
   limpiarMensaje(tipo: 'error' | 'exito' | 'ninguno' = 'ninguno') {
     if (tipo === 'error' || tipo === 'ninguno') this.mensajeError = '';
@@ -94,17 +94,15 @@ export class AsignacionesLogica {
       chofer.email.toLowerCase().includes(busquedaLower)
     );
   }
-  
+
   contarVehiculosAsignados(choferId: string): number {
-  //  return this.vehiculos.filter(v => v.choferAsignado === choferId).length;
-  return 0; // Temporal mientras no se implemente choferAsignado   CAMBIAR LUEGO
+    return this.vehiculos.filter(v => v.choferAsignado === choferId).length;
   }
 
   obtenerVehiculosDelChofer(choferId: string): Vehiculo[] {
-   // return this.vehiculos.filter(v => v.choferAsignado === choferId);
-    return []; // Temporal mientras no se implemente choferAsignado CAMBIAR LUEGO
+    return this.vehiculos.filter(v => v.choferAsignado === choferId);
   }
-  
+
   abrirModalAsignacion(chofer: Chofer) {
     this.choferSeleccionado = chofer;
     this.vehiculosDisponibles = this.vehiculos;
@@ -141,11 +139,11 @@ export class AsignacionesLogica {
       });
 
       this.mensajeExito = `Vehículo asignado exitosamente a ${this.choferSeleccionado.nombre}`;
-      
+
       // Actualizar localmente
       const vehiculo = this.vehiculos.find(v => v.id === vehiculoId);
       if (vehiculo) {
-       // vehiculo.choferAsignado = this.choferSeleccionado.uid;
+        vehiculo.choferAsignado = this.choferSeleccionado.uid;
       }
 
       this.cerrarModal();
@@ -169,11 +167,11 @@ export class AsignacionesLogica {
       });
 
       this.mensajeExito = 'Asignación removida exitosamente.';
-      
+
       // Actualizar localmente
       const vehiculo = this.vehiculos.find(v => v.id === vehiculoId);
       if (vehiculo) {
-       // vehiculo.choferAsignado = null;
+        vehiculo.choferAsignado = null;
       }
 
       await this.cargarVehiculos();
