@@ -1,6 +1,6 @@
 export const environmentApi = {
     produccion: false,
-    apiUrl: 'http://apirecoleccion.gonzaloandreslucio.com/api'
+    apiUrl: 'https://apirecoleccion.gonzaloandreslucio.com/api'
 };
 
 export const environmentPerfilId = {
