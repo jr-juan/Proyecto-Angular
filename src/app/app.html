@@ -32,6 +32,20 @@
 </header>
 }
 
+<!-- Modal confirmación cerrar sesión -->
+@if (mostrarModal()) {
+<div class="modal-overlay" (click)="cancelarCerrarSesion()">
+  <div class="modal-contenido" (click)="$event.stopPropagation()">
+    <h3>¿Cerrar sesión?</h3>
+    <p>¿Estás seguro de que quieres salir del sistema?</p>
+    <div class="modal-botones">
+      <button (click)="cancelarCerrarSesion()" class="btn-cancelar">Cancelar</button>
+      <button (click)="confirmarCerrarSesion()" class="btn-confirmar">Cerrar sesión</button>
+    </div>
+  </div>
+</div>
+}
+
 <!-- Contenido principal -->
 <main class="contenido-principal" [class.sin-header]="!mostrarHeader()">
   <router-outlet></router-outlet>
@@ -106,4 +120,72 @@
     background: #c0392b;
     transform: translateY(-2px);
   }
+
+  /* Modal cerrar sesión */
+  
+  .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-contenido {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  width: 320px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-contenido h3 {
+  margin: 0 0 10px;
+  color: #333;
+  font-size: 1.3rem;
+}
+
+.modal-contenido p {
+  color: #666;
+  margin-bottom: 25px;
+}
+
+.modal-botones {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.btn-cancelar {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(0,0,0,0.1);
+  color: #333;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-cancelar:hover {
+  background: rgba(0,0,0,0.2);
+}
+
+.btn-confirmar {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background: #e74c3c;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-confirmar:hover {
+  background: #c0392b;
+}
 </style>
