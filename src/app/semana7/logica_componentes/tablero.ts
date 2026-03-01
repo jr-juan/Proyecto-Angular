@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from '../servicios/api.service';
+import { AuthService } from '../servicios/auth';
 import { Ruta, Vehiculo } from '../modelos/interfaces';
+import { filter, take, switchMap } from 'rxjs';
 
 @Injectable()
 export class TableroLogica {
@@ -8,15 +10,19 @@ export class TableroLogica {
   vehiculos: Vehiculo[] = [];
   vehiculosActivos = 0;
 
-  constructor(private apiService: ApiService) {}
+  constructor(private apiService: ApiService, private authService: AuthService) {}
 
   inicializar() {
-    this.cargarDatos();
-  }
-
-  cargarDatos() {
-    this.cargarRutas();
-    this.cargarVehiculos();
+    // Esperamos a que el rol esté disponible (usuario autenticado)
+    this.authService.rolUsuario$.pipe(
+      filter(rol => rol !== null),  // esperamos hasta que no sea null
+      take(1),                       // solo la primera vez
+      switchMap(() => {
+        this.cargarRutas();
+        this.cargarVehiculos();
+        return [];
+      })
+    ).subscribe();
   }
 
   private cargarRutas() {
