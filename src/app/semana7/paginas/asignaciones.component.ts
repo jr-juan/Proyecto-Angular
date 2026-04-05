@@ -65,7 +65,9 @@ import { AsignacionesLogica } from '../logica_componentes/asignaciones';
 
                 <div class="chofer-stats">
                   <div class="stat-item">
-                    <span class="stat-numero">{{ logica.contarVehiculosAsignados(chofer.uid) }}</span>
+                    <span class="stat-numero">{{
+                      logica.contarVehiculosAsignados(chofer.uid)
+                    }}</span>
                     <span class="stat-label">Vehículos Asignados</span>
                   </div>
                 </div>
@@ -74,14 +76,20 @@ import { AsignacionesLogica } from '../logica_componentes/asignaciones';
                   <h4>Vehículos Asignados:</h4>
                   @if (logica.obtenerVehiculosDelChofer(chofer.uid).length > 0) {
                     <div class="lista-vehiculos-mini">
-                      @for (vehiculo of logica.obtenerVehiculosDelChofer(chofer.uid); track vehiculo.id) {
+                      @for (
+                        vehiculo of logica.obtenerVehiculosDelChofer(chofer.uid);
+                        track vehiculo.id
+                      ) {
                         <div class="vehiculo-mini">
                           <span class="vehiculo-placa">{{ vehiculo.placa }}</span>
-                          <span class="vehiculo-info">{{ vehiculo.marca }} {{ vehiculo.modelo }}</span>
-                          <button 
+                          <span class="vehiculo-info"
+                            >{{ vehiculo.marca }} {{ vehiculo.modelo }}</span
+                          >
+                          <button
                             class="btn-quitar"
                             (click)="logica.desasignarVehiculo(vehiculo.id!, chofer.uid)"
-                            title="Quitar asignación">
+                            title="Quitar asignación"
+                          >
                             ✕
                           </button>
                         </div>
@@ -91,10 +99,35 @@ import { AsignacionesLogica } from '../logica_componentes/asignaciones';
                     <p class="sin-vehiculos">Sin vehículos asignados</p>
                   }
                 </div>
+                <!-- Rutas asignadas -->
+                <div class="vehiculos-asignados">
+                  <h4>Rutas Asignadas:</h4>
+                  @if (logica.obtenerRutasDelChofer(chofer.uid).length > 0) {
+                    <div class="lista-vehiculos-mini">
+                      @for (ruta of logica.obtenerRutasDelChofer(chofer.uid); track ruta.id) {
+                        <div class="vehiculo-mini">
+                          <span class="vehiculo-placa" [style.color]="ruta.color_hex">■</span>
+                          <span class="vehiculo-info">{{ ruta.nombre_ruta }}</span>
+                          <button
+                            class="btn-quitar"
+                            (click)="logica.desasignarRuta(ruta.id!)"
+                            title="Quitar asignación"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <p class="sin-vehiculos">Sin rutas asignadas</p>
+                  }
+                </div>
 
-                <button 
-                  class="btn-asignar"
-                  (click)="logica.abrirModalAsignacion(chofer)">
+                <button class="btn-asignar" (click)="logica.abrirModalRutas(chofer)">
+                  + Asignar Ruta
+                </button>
+
+                <button class="btn-asignar" (click)="logica.abrirModalAsignacion(chofer)">
                   + Asignar Vehículo
                 </button>
               </div>
@@ -108,7 +141,7 @@ import { AsignacionesLogica } from '../logica_componentes/asignaciones';
       </div>
 
       <!-- Modal de Asignación -->
-    @if (logica.mostrarModal) {
+      @if (logica.mostrarModal) {
         <div class="modal-overlay" (click)="logica.cerrarModal()">
           <div class="modal-contenido" (click)="$event.stopPropagation()">
             <div class="modal-header">
@@ -139,21 +172,74 @@ import { AsignacionesLogica } from '../logica_componentes/asignaciones';
                         @if (vehiculo.choferAsignado) {
                           <span class="badge-asignado">Ya asignado</span>
                         }
-                      </div> 
+                      </div>
                       <button
                         class="btn-seleccionar"
-                        [disabled]="vehiculo.choferAsignado !== null && vehiculo.choferAsignado !== undefined"
-                        (click)="logica.asignarVehiculo(vehiculo.id!)">
+                        [disabled]="
+                          vehiculo.choferAsignado !== null && vehiculo.choferAsignado !== undefined
+                        "
+                        (click)="logica.asignarVehiculo(vehiculo.id!)"
+                      >
                         {{ vehiculo.choferAsignado ? 'Asignado' : 'Asignar' }}
                       </button>
                     </div>
-                  } 
+                  }
                 </div>
               } @else {
                 <div class="sin-vehiculos-disponibles">
                   <p>No hay vehículos disponibles para asignar</p>
                 </div>
-              }  
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (logica.mostrarModalRutas) {
+        <div class="modal-overlay" (click)="logica.cerrarModalRutas()">
+          <div class="modal-contenido" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>Asignar Ruta a {{ logica.choferSeleccionado?.nombre }}</h3>
+              <button class="btn-cerrar" (click)="logica.cerrarModalRutas()">✕</button>
+            </div>
+            <div class="modal-body">
+              <div class="busqueda-modal">
+                <input
+                  type="text"
+                  [(ngModel)]="logica.busquedaRuta"
+                  (input)="logica.filtrarRutasDisponibles()"
+                  placeholder="Buscar ruta por nombre..."
+                  class="input-busqueda"
+                />
+              </div>
+              @if (logica.cargandoRutas) {
+                <div class="loading">Cargando rutas...</div>
+              } @else if (logica.rutasDisponiblesFiltradas.length > 0) {
+                <div class="lista-vehiculos-disponibles">
+                  @for (ruta of logica.rutasDisponiblesFiltradas; track ruta.id) {
+                    <div class="item-vehiculo-disponible">
+                      <div class="vehiculo-detalle">
+                        <strong [style.color]="ruta.color_hex">■</strong>
+                        <strong>{{ ruta.nombre_ruta }}</strong>
+                        @if (ruta.choferAsignado) {
+                          <span class="badge-asignado">Ya asignada</span>
+                        }
+                      </div>
+                      <button
+                        class="btn-seleccionar"
+                        [disabled]="!!ruta.choferAsignado"
+                        (click)="logica.asignarRuta(ruta.id!)"
+                      >
+                        {{ ruta.choferAsignado ? 'Asignada' : 'Asignar' }}
+                      </button>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="sin-vehiculos-disponibles">
+                  <p>No hay rutas disponibles</p>
+                </div>
+              }
             </div>
           </div>
         </div>
@@ -162,7 +248,7 @@ import { AsignacionesLogica } from '../logica_componentes/asignaciones';
   `,
 })
 export class AsignacionesComponent implements OnInit {
-  constructor(public logica: AsignacionesLogica) { }
+  constructor(public logica: AsignacionesLogica) {}
 
   ngOnInit() {
     this.logica.inicializar();
