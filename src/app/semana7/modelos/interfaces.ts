@@ -6,6 +6,7 @@ export interface Ruta {
   nombre_ruta: string;
   color_hex?: string; 
   shape?: string; // GeoJSON en string coomo en la API 
+  choferAsignado?: string | null; 
 }
 
 export interface CrearRuta {
