@@ -82,6 +82,18 @@ export class ApiService {
     );
   }
 
+  actualizarRuta(idFirestore: string, datos: Partial<Ruta>): Observable<void> {
+  const user = this.auth.currentUser;
+  if (!user) return throwError(() => new Error('Usuario no autenticado'));
+
+  const docRef = doc(this.firestore, 'rutas', idFirestore);
+  return from(
+    runInInjectionContext(this.injector, () =>
+      updateDoc(docRef, datos as { [key: string]: any })
+    )
+  );
+}
+
   eliminarRuta(idFirestore: string): Observable<void> {
     const user = this.auth.currentUser;
     if (!user) return throwError(() => new Error('Usuario no autenticado'));
