@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TableroLogica } from '../logica_componentes/tablero';
@@ -8,6 +8,7 @@ import { TableroLogica } from '../logica_componentes/tablero';
   standalone: true,
   imports: [CommonModule, RouterModule],
   providers: [TableroLogica],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   styleUrls: [`../estilos_componentes/tablero.css`],
   template: `
     <div class="tablero-contenedor">
@@ -17,7 +18,7 @@ import { TableroLogica } from '../logica_componentes/tablero';
       <!-- Tarjetas de estadísticas -->
       <div class="estadisticas">
         <div class="tarjeta-stat">
-          <div class="icono-stat">Vehículos</div>
+          <ion-icon name="car" class="icono-stat-ion"></ion-icon>
           <div class="info-stat">
             <h3>{{ logica.vehiculos.length }}</h3>
             <p>Vehículos Totales</p>
@@ -26,7 +27,7 @@ import { TableroLogica } from '../logica_componentes/tablero';
         </div>
 
         <div class="tarjeta-stat">
-          <div class="icono-stat">Rutas</div>
+          <ion-icon name="map" class="icono-stat-ion"></ion-icon>
           <div class="info-stat">
             <h3>{{ logica.rutas.length }}</h3>
             <p>Rutas Registradas</p>
@@ -35,7 +36,7 @@ import { TableroLogica } from '../logica_componentes/tablero';
         </div>
 
         <div class="tarjeta-stat">
-          <div class="icono-stat">Estado</div>
+         <ion-icon name="checkmark-circle" class="icono-stat-ion color-green"></ion-icon>
           <div class="info-stat">
             <h3>{{ logica.vehiculosActivos }}</h3>
             <p>Vehículos Activos</p>
@@ -48,11 +49,11 @@ import { TableroLogica } from '../logica_componentes/tablero';
         <h3>Acciones Rápidas</h3>
         <div class="botones-accion">
           <a routerLink="/vehiculos" class="btn-accion btn-primario">
-            <span class="icono"></span>
+           <ion-icon name="car-outline"></ion-icon>
             <span>Gestionar Vehículos</span>
           </a>
           <a routerLink="/rutas" class="btn-accion btn-secundario">
-            <span class="icono"></span>
+            <ion-icon name="map-outline"></ion-icon>
             <span>Gestionar Rutas</span>
           </a>
         </div>
@@ -60,22 +61,22 @@ import { TableroLogica } from '../logica_componentes/tablero';
 
       <!-- Últimos vehículos -->
       @if (logica.vehiculos.length > 0) {
-      <div class="seccion-recientes">
-        <h3>Últimos Vehículos Registrados</h3>
-        <div class="lista-mini">
-          @for (v of logica.obtenerUltimosVehiculos(); track v.id) {
-          <div class="item-mini">
-            <div class="item-info">
-              <strong>{{ v.placa }}</strong>
-              <span class="detalle">{{ v.marca }} {{ v.modelo }}</span>
-            </div>
-            <span class="badge" [class.activo]="v.activo" [class.inactivo]="!v.activo">
-              {{ v.activo ? 'Activo' : 'Inactivo' }}
-            </span>
+        <div class="seccion-recientes">
+          <h3>Últimos Vehículos Registrados</h3>
+          <div class="lista-mini">
+            @for (v of logica.obtenerUltimosVehiculos(); track v.id) {
+              <div class="item-mini">
+                <div class="item-info">
+                  <strong>{{ v.placa }}</strong>
+                  <span class="detalle">{{ v.marca }} {{ v.modelo }}</span>
+                </div>
+                <span class="badge" [class.activo]="v.activo" [class.inactivo]="!v.activo">
+                  {{ v.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </div>
+            }
           </div>
-          }
         </div>
-      </div>
       }
     </div>
   `,
