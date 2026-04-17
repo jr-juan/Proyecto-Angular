@@ -58,6 +58,14 @@
   font-size: 3rem;
 }
 
+.icono-stat-ion {
+  font-size: 2.5rem;
+  color: #3498db;
+}
+.icono-stat-ion.color-green {
+  color: #43a047;
+}
+
 .info-stat {
   text-align: center;
 }
@@ -196,6 +204,14 @@
   font-size: 1.2rem;
   color: #2c3e50;
   margin: 10px 0;
+}
+
+.sin-vehiculos ion-icon {
+  font-size: 3rem;
+  color: #bdc3c7;
+  display: block;
+  margin-bottom: 10px;
+  align-items: center;
 }
 
 .texto-secundario {
