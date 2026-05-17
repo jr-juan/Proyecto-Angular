@@ -4,7 +4,6 @@ import { ApiService } from '../servicios/api.service';
 import { ElementRef } from '@angular/core';
 import { Ruta, Calle } from '../modelos/interfaces';
 import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
