@@ -1,71 +1,74 @@
-# PrimerProyecto
+<div align="center">
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.6.
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+# 🌐 App Web — Panel Administrativo
+### Sistema de Recolección de Basura
 
-----
+![Angular](https://img.shields.io/badge/Angular-20-DD0031?style=for-the-badge&logo=angular&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
 
-# Integrantes
-- Juan Roman Cuero Ordoñez
-- Heily Alexandra Estupiñan Marulanda
-- Jhon Jader Riascos Angulo
+*Panel administrativo web para la gestión de rutas, vehículos y usuarios del sistema de recolección de basura, complemento de las apps móviles Ciudadano y Chofer.*
 
+</div>
 
-# Semana 2 – Filosofía de la tecnología
+---
 
+## 🗂️ Tablero de planeación
 
-## Pros de Angular
+[![Miro Board](https://img.shields.io/badge/Miro-Ver_tablero-FFD02F?style=for-the-badge&logo=miro&logoColor=black)](https://miro.com/app/board/uXjVGwdDPXY=/)
 
-- Estructura robusta y escalabilidad.
-- Inyección de dependencias.
-- Pruebas integradas.
-- Gran comunidad y recursos.
-- Compilación AOT (Ahead-of-Time).
-- CLI (Interfaz de Línea de Comandos).
-- Actualizaciones periódicas y compatibilidad con versiones anteriores.
-- Angular Universal.
+---
 
+## 🔗 Ecosistema del proyecto
 
-## Contras de Angular
+Este repositorio forma parte de un sistema compuesto por tres aplicaciones que trabajan en conjunto:
 
-- Curva de aprendizaje pronunciada.
-- Rendimiento en aplicaciones complejas.
-- Mayor tamaño de la aplicación.
-- Posibles problemas de migración entre versiones.
-- Complejidad y verbosidad.
-- Menor flexibilidad en comparación con otros frameworks.
+| Aplicación | Repositorio | Descripción |
+|---|---|---|
+| 🌐 **App Web (Angular)** *(este repo)* | [Proyecto-Angular](https://github.com/jr-juan/Proyecto-Angular.git) | Panel administrativo para gestión de rutas, vehículos y usuarios |
+| 📱 App Ciudadano | [App-Ciudadano](https://github.com/jr-juan/App-Ciudadano.git) | Visualización en tiempo real de rutas y camiones |
+| 🚛 App Chofer | [App-Chofer](https://github.com/jr-juan/App-Chofer.git) | Transmisión GPS en tiempo real del conductor |
 
-## Resumen
-Angular es un framework frontend desarrollado por Google que se caracteriza por su robustez, 
-escalabilidad y uso de TypeScript. Su filosofía se centra en ofrecer una arquitectura bien 
-estructurada que facilite el desarrollo de aplicaciones grandes y mantenibles. Sin embargo, 
-su curva de aprendizaje es más pronunciada que la de otros frameworks, lo que lo hace más 
-apropiado para proyectos complejos y equipos organizados.
+---
 
+## ⚙️ Instalación
 
-## Ejemplo mínimo – Hola Mundo
+```bash
+# Clonar el repositorio
+git clone https://github.com/jr-juan/Proyecto-Angular.git
 
-```ts
-// Archivo: app.ts
-import { Component } from '@angular/core';
+# Entrar al proyecto
+cd Proyecto-Angular
 
-@Component({
-  selector: 'app-root',
-  templateUrl: './app.html',
-  styleUrls: ['./styles.css']
-})
-export class AppComponent {
-  title = 'PrimerProyecto';
-  mensaje = 'Hola Mundo desde Angular';
-}
+# Instalar dependencias
+npm install
 
-// Archivo: app.html
-// Uno simple:
-<h1>{{ mensaje }}</h1>
+# Ejecutar en el navegador
+ng serve
+```
 
-// Archivo: styles.css
-// (opcional, pero para que se vea bien):
-h1 {
-  color: darkblue;
-  font-family: Arial, sans-serif;
-}
+Angular CLI incluye herramientas de scaffolding. Para generar un nuevo componente:
+
+```bash
+ng generate component nombre-componente
+```
+
+---
+
+## 👥 Equipo de desarrollo
+
+<div align="center">
+
+Proyecto universitario desarrollado como parte del curso de desarrollo web.
+
+**Sistema de Gestión de Rutas de Recolección de Basura**
+
+| Nombre | Rol |
+|---|---|
+| 👨‍💻 Juan Roman Cuero Ordoñez | Desarrollador |
+| 👩‍💻 Heily Alexandra Estupiñan Marulanda | Desarrolladora |
+| 👨‍💻 Jhon Jader Riascos Angulo | Desarrollador |
+
+*Construido con ❤️ usando Angular*
+
+</div>
