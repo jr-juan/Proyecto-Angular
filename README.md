@@ -25,7 +25,7 @@ Este repositorio forma parte de un sistema compuesto por tres aplicaciones que t
 
 | Aplicación | Repositorio | Descripción |
 |---|---|---|
-| 🌐 **App Web (Angular)** *(este repo)* | [Proyecto-Angular](https://github.com/jr-juan/Proyecto-Angular.git) | Panel administrativo para gestión de rutas, vehículos y usuarios |
+| 🌐 **App Web (Angular)** *(este repo)* | [Proyecto-Angular](https://github.com/jr-juan/Proyecto-Angular.git) | Panel administrativo para gestión de rutas, vehículos y usuarios (SEMANA 7 - PROYECTO API) |
 | 📱 App Ciudadano | [App-Ciudadano](https://github.com/jr-juan/App-Ciudadano.git) | Visualización en tiempo real de rutas y camiones |
 | 🚛 App Chofer | [App-Chofer](https://github.com/jr-juan/App-Chofer.git) | Transmisión GPS en tiempo real del conductor |
 
